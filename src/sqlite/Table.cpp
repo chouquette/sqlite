@@ -26,7 +26,7 @@ using namespace vsqlite;
 
 Operation Table::create()
 {
-    std::string query = "CREATE TABLE " + m_name + '(';
+    std::string query = "CREATE TABLE IF NOT EXISTS " + m_name + '(';
     for (auto c : m_attributes)
         query += c->name() + ' ' + c->typeName() + ',';
     query.replace(query.end() - 1, query.end(), ")");

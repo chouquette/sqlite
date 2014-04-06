@@ -23,12 +23,11 @@
 #ifndef SQLITE_HPP
 #define SQLITE_HPP
 
+#include <memory>
 #include <vector>
 #include <stdint.h>
-#include <memory>
-
-#define DECLARE_TITLE(type, name) \
-    public: Field<type>& name;
+#include <string>
+#include <sqlite3.h>
 
 namespace vsqlite
 {
@@ -84,6 +83,23 @@ class Column : public Attribute
 
     private:
         T U::* m_fieldPtr;
+};
+
+class Operation
+{
+    public:
+        typedef int(*Callback)(void*,int,char**,char**);
+        Operation(const std::string& request, Callback cb)
+            : m_request( request )
+            , m_callback( cb )
+        {
+        }
+
+    private:
+        std::string m_request;
+        Callback m_callback;
+
+        friend class DBConnection;
 };
 
 }

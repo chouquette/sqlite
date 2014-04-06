@@ -7,9 +7,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 find_package(Sqlite3 REQUIRED)
 
-
 list(APPEND SRC_LIST
     sqlite/Table.cpp
+    sqlite/DbConnection.cpp
 )
 
 add_library(MediaLibrary SHARED ${SRC_LIST})

@@ -44,11 +44,25 @@ class TestEntry
         std::string someText;
 };
 
-TEST(Sqlite, Create)
+static vsqlite::DBConnection* conn;
+
+class Sqlite : public testing::Test
 {
-    vsqlite::DBConnection conn("test.db");
-    conn << TestEntry::table().create();
-    ASSERT_TRUE(conn.isValid());
+    virtual void SetUp()
+    {
+        conn = new vsqlite::DBConnection("test.db");
+    }
+    virtual void TearDown()
+    {
+        delete conn;
+        unlink("test.db");
+    }
+};
+
+TEST_F (Sqlite, Create)
+{
+    *conn << TestEntry::table().create();
+    ASSERT_TRUE(conn->isValid());
 }
 
 int main( int argc, char **argv )

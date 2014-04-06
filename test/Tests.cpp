@@ -21,4 +21,38 @@
  *****************************************************************************/
 
 #include "gtest/gtest.h"
+#include <string>
 
+#include "sqlite/sqlite.hpp"
+#include "sqlite/DbConnection.h"
+#include "sqlite/Table.hpp"
+
+class TestEntry
+{
+    public:
+        static vsqlite::Table& table()
+        {
+            static vsqlite::Table table =
+                    vsqlite::Table::Create("TestEntryTable",
+                                           vsqlite::Table::createField(&TestEntry::primaryKey, "id"),
+                                           vsqlite::Table::createField(&TestEntry::someText, "text") );
+            return table;
+        }
+
+    private:
+        int primaryKey;
+        std::string someText;
+};
+
+TEST(Sqlite, Create)
+{
+    vsqlite::DBConnection conn("test.db");
+    conn << TestEntry::table().create();
+    ASSERT_TRUE(conn.isValid());
+}
+
+int main( int argc, char **argv )
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

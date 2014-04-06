@@ -63,7 +63,7 @@ class Table
 
         Table(const std::string& name) : m_name(name) {}
 
-        bool create();
+        Operation create();
 
     private:
         std::string m_name;

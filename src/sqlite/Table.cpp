@@ -24,11 +24,11 @@
 
 using namespace vsqlite;
 
-bool
-Table::create()
+Operation Table::create()
 {
     std::string query = "CREATE TABLE " + m_name + '(';
     for (auto c : m_attributes)
         query += c->name() + ' ' + c->typeName() + ',';
-    query += ')';
+    query.replace(query.end() - 1, query.end(), ")");
+    return Operation(query, nullptr);
 }

@@ -49,7 +49,7 @@ template <>
 class Traits<std::string>
 {
     public:
-        static constexpr const char* name = "VARCHAR";
+        static constexpr const char* name = "VARCHAR (255)";
 };
 
 class Attribute

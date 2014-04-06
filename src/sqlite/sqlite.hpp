@@ -33,6 +33,25 @@
 namespace vsqlite
 {
 
+template <typename T>
+class Traits
+{
+};
+
+template <>
+class Traits<int>
+{
+    public:
+        static constexpr const char* name = "INT";
+};
+
+template <>
+class Traits<std::string>
+{
+    public:
+        static constexpr const char* name = "VARCHAR";
+};
+
 class Attribute
 {
     public:
@@ -40,6 +59,9 @@ class Attribute
             : m_name( name )
         {
         }
+
+        const std::string& name() const { return m_name; }
+        virtual const char* typeName() const = 0;
 
     private:
         std::string m_name;
@@ -55,66 +77,13 @@ class Column : public Attribute
         {
         }
 
-        //        virtual void set(const T& value)
-        //        {
-        //            *this = value;
-        //        }
-        //        virtual const T& get(const T&)
-        //        {
-        //            return *this;
-        //        }
+        virtual const char* typeName() const
+        {
+            return Traits<T>::name;
+        }
 
-        //        operator const T&()
-        //        {
-        //            // insert lazy loading & traits function here
-        //            return m_field;
-        //        }
-        //        T& operator=(const T& value)
-        //        {
-        //            m_field = value;
-        //            return m_field;
-        //        }
     private:
         T U::* m_fieldPtr;
-};
-
-class Table
-{
-    private:
-        template <typename T>
-        static void Create(Table& t, T column)
-        {
-            //FIXME: static_assert that column is an Attribute instance
-            t.m_attributes.push_back(column);
-        }
-
-        template <typename T, typename... COLUMNS>
-        static void Create(Table& t, T column, COLUMNS... columns)
-        {
-            //FIXME: static_assert that column is an Attribute instance
-            t.m_attributes.push_back(column);
-            Create(t, columns...);
-        }
-
-
-    public:
-        template <typename... COLUMNS>
-        static Table Create(const std::string& name, COLUMNS... columns)
-        {
-            Table t(name);
-        }
-
-        template <typename T, typename U>
-        static std::shared_ptr<Attribute> createField(T U::* attributePtr, const std::string& name)
-        {
-            return std::make_shared<Attribute>(Column<T, U>(attributePtr, name));
-        }
-
-        Table(const std::string& name) : m_name(name) {}
-
-    private:
-        std::string m_name;
-        std::vector<Attribute> m_attributes;
 };
 
 }

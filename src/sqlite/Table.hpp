@@ -47,6 +47,8 @@ class Table
         }
 
     public:
+        typedef std::vector<std::shared_ptr<Attribute>> Attributes;
+
         template <typename... COLUMNS>
         static Table Create(const std::string& name, COLUMNS... columns)
         {
@@ -62,8 +64,8 @@ class Table
         }
 
         Table(const std::string& name) : m_name(name) {}
-
         Operation create();
+        const Attributes& attributes() const;
 
     private:
         std::string m_name;

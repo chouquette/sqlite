@@ -32,3 +32,9 @@ Operation Table::create()
     query.replace(query.end() - 1, query.end(), ")");
     return Operation(query, nullptr);
 }
+
+const Table::Attributes&
+Table::attributes() const
+{
+    return m_attributes;
+}

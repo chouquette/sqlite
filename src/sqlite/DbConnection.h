@@ -42,6 +42,9 @@ class DBConnection
 
         DBConnection& operator<<(const Operation& op);
 
+        // For test purposes. There might be a better way.
+        sqlite3*    rawConnection();
+
     private:
         sqlite3*    m_db;
         bool        m_isValid;

@@ -66,3 +66,9 @@ DBConnection::operator<<(const Operation& op)
     }
     return *this;
 }
+
+sqlite3*
+DBConnection::rawConnection()
+{
+    return m_db;
+}

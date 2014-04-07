@@ -27,21 +27,23 @@
 #include "sqlite/DbConnection.h"
 #include "sqlite/Table.hpp"
 
-class TestEntry
+class TestTable
 {
     public:
         static vsqlite::Table& table()
         {
             static vsqlite::Table table =
-                    vsqlite::Table::Create("TestEntryTable",
-                                           vsqlite::Table::createField(&TestEntry::primaryKey, "id"),
-                                           vsqlite::Table::createField(&TestEntry::someText, "text") );
+                    vsqlite::Table::Create("TestTable",
+                                           vsqlite::Table::createField(&TestTable::primaryKey, "id"),
+                                           vsqlite::Table::createField(&TestTable::someText, "text"),
+                                           vsqlite::Table::createField(&TestTable::moreText, "otherField") );
             return table;
         }
 
     private:
         int primaryKey;
         std::string someText;
+        std::string moreText;
 };
 
 static vsqlite::DBConnection* conn;
@@ -61,8 +63,28 @@ class Sqlite : public testing::Test
 
 TEST_F (Sqlite, Create)
 {
-    *conn << TestEntry::table().create();
+    *conn << TestTable::table().create();
     ASSERT_TRUE(conn->isValid());
+    const char* checkTableRequest = "pragma table_info(TestTable)";
+    sqlite3_stmt* outHandle;
+    sqlite3_prepare_v2(conn->rawConnection(), checkTableRequest, strlen(checkTableRequest),
+                       &outHandle, NULL);
+    for (int i = 0; i < TestTable::table().attributes().size(); ++i)
+    {
+        auto attribute = TestTable::table().attributes()[i];
+        ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_ROW );
+        // Name
+        const unsigned char* columnName = sqlite3_column_text( outHandle, 1 );
+        ASSERT_TRUE( attribute->name() == (const char*)columnName );
+        // Type
+        const unsigned char* psz_type = sqlite3_column_text( outHandle, 2 );
+        std::string type( (const char*)psz_type );
+        ASSERT_NE( type.find( attribute->typeName() ), std::string::npos );
+
+    }
+    ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_DONE );
+    sqlite3_finalize( outHandle );
+
 }
 
 int main( int argc, char **argv )

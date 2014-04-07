@@ -29,6 +29,10 @@
 #include <string>
 #include <sqlite3.h>
 
+/*
+ * Heavily inspired from https://github.com/burner/sweet.hpp/blob/master/sweetql.hpp
+ */
+
 namespace vsqlite
 {
 

@@ -30,24 +30,34 @@ namespace vsqlite
 
 class Table
 {
+    public:
+        typedef std::shared_ptr<Attribute> AttributePtr;
+        typedef std::vector<AttributePtr> Attributes;
+
     private:
+        template <typename T>
+        void appendColumn(T column)
+        {
+            static_assert(std::is_base_of<AttributePtr, T>::value,
+                           "All table fields must inherit Attribute class");
+            //FIXME: static_assert that column is an Attribute instance
+            m_attributes.push_back(column);
+        }
+
         template <typename T>
         static void Create(Table& t, T column)
         {
-            //FIXME: static_assert that column is an Attribute instance
-            t.m_attributes.push_back(column);
+            t.appendColumn(column);
         }
 
         template <typename T, typename... COLUMNS>
         static void Create(Table& t, T column, COLUMNS... columns)
         {
-            //FIXME: static_assert that column is an Attribute instance
-            t.m_attributes.push_back(column);
+            t.appendColumn(column);
             Create(t, columns...);
         }
 
     public:
-        typedef std::vector<std::shared_ptr<Attribute>> Attributes;
 
         template <typename... COLUMNS>
         static Table Create(const std::string& name, COLUMNS... columns)

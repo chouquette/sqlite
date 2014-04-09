@@ -28,32 +28,33 @@
 namespace vsqlite
 {
 
+template <typename T>
 class Table
 {
     public:
-        typedef std::shared_ptr<Attribute> AttributePtr;
+        typedef std::shared_ptr<Attribute<T>> AttributePtr;
         typedef std::vector<AttributePtr> Attributes;
 
     private:
-        template <typename T>
-        void appendColumn(std::shared_ptr<T> column)
+        template <typename C>
+        void appendColumn(std::shared_ptr<C> column)
         {
-            static_assert(std::is_base_of<Attribute, T>::value,
+            static_assert(std::is_base_of<Attribute<T>, C>::value,
                            "All table fields must inherit Attribute class");
             //FIXME: static_assert that column is an Attribute instance
-            if (is_instantiation_of<PrimaryKey, T>::value)
+            if (is_instantiation_of<PrimaryKey, C>::value)
                 m_primaryKey = column;
             m_attributes.push_back(column);
         }
 
-        template <typename T>
-        static void Create(Table& t, T column)
+        template <typename C>
+        static void Create(Table& t, C column)
         {
             t.appendColumn(column);
         }
 
-        template <typename T, typename... COLUMNS>
-        static void Create(Table& t, T column, COLUMNS... columns)
+        template <typename C, typename... COLUMNS>
+        static void Create(Table& t, C column, COLUMNS... columns)
         {
             t.appendColumn(column);
             Create(t, columns...);
@@ -69,22 +70,44 @@ class Table
             return t;
         }
 
-        template <typename T, typename U>
-        static std::shared_ptr<Column<T,U>> createField(T U::* attributePtr, const std::string& name)
+        template <typename TYPE>
+        static std::shared_ptr<Column<TYPE, T>> createField(TYPE T::* attributePtr, const std::string& name)
         {
-            return std::make_shared<Column<T, U>>(attributePtr, name);
+            return std::make_shared<Column<TYPE, T>>(attributePtr, name);
         }
 
-        template <typename T, typename U>
-        static std::shared_ptr<PrimaryKey<T, U>> createPrimaryKey(T U::* attributePtr, const std::string& name)
+        template <typename TYPE>
+        static std::shared_ptr<PrimaryKey<TYPE, T>> createPrimaryKey(TYPE T::* attributePtr, const std::string& name)
         {
-            return std::make_shared<PrimaryKey<T, U>>(attributePtr, name);
+            return std::make_shared<PrimaryKey<TYPE, T>>(attributePtr, name);
         }
 
         Table(const std::string& name) : m_name(name) {}
-        Operation create();
-        const Attributes& attributes() const;
-        const AttributePtr primaryKey() const;
+        Operation create()
+        {
+            std::string query = "CREATE TABLE IF NOT EXISTS " + m_name + '(';
+            for (auto c : m_attributes)
+              query += c->name() + ' ' + c->typeName() + ',';
+            query.replace(query.end() - 1, query.end(), ")");
+            return Operation(query, nullptr);
+        }
+
+        const Attributes& attributes() const { return m_attributes; }
+        const AttributePtr primaryKey() const { return m_primaryKey; }
+
+        Operation insert(const T& record)
+        {
+            std::string insertInto = "INSERT INTO " + m_name + '(';
+            std::string values = "VALUES (";
+            for (auto attr : m_attributes)
+            {
+                insertInto += attr->name() + ",";
+                values += attr->insert(record) + ",";
+            }
+            insertInto.replace(insertInto.end() - 1, insertInto.end(), ")");
+            values.replace(values.end() - 1, values.end(), ")");
+            return Operation(insertInto + values + ';', nullptr);
+        }
 
     private:
         std::string m_name;

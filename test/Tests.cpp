@@ -30,17 +30,17 @@
 class TestTable
 {
     public:
-        static vsqlite::Table& table()
+        static vsqlite::Table<TestTable>& table()
         {
-            static vsqlite::Table table =
-                    vsqlite::Table::Create("TestTable",
-                                           vsqlite::Table::createPrimaryKey(&TestTable::primaryKey, "id"),
-                                           vsqlite::Table::createField(&TestTable::someText, "text"),
-                                           vsqlite::Table::createField(&TestTable::moreText, "otherField") );
+            static auto table =
+                    vsqlite::Table<TestTable>::Create("TestTable",
+                                           vsqlite::Table<TestTable>::createPrimaryKey(&TestTable::primaryKey, "id"),
+                                           vsqlite::Table<TestTable>::createField(&TestTable::someText, "text"),
+                                           vsqlite::Table<TestTable>::createField(&TestTable::moreText, "otherField") );
             return table;
         }
 
-    private:
+    public:
         int primaryKey;
         std::string someText;
         std::string moreText;
@@ -87,6 +87,44 @@ TEST_F (Sqlite, Create)
     sqlite3_finalize( outHandle );
 
 }
+
+TEST_F( Sqlite, Insert )
+{
+    *conn << TestTable::table().create();
+    TestTable t;
+    t.primaryKey = 1;
+    t.someText = "sea";
+    t.moreText = "otter";
+    *conn << TestTable::table().insert( t );
+    ASSERT_TRUE( conn->isValid() );
+    const char* listEntries = "SELECT * FROM TestTable";
+    sqlite3_stmt* outHandle;
+    sqlite3_prepare_v2(conn->rawConnection(), listEntries, strlen(listEntries),
+                       &outHandle, NULL);
+    ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_ROW );
+    int primaryKey = sqlite3_column_int( outHandle, 0 );
+    ASSERT_TRUE( t.primaryKey == primaryKey );
+    const unsigned char* someText = sqlite3_column_text( outHandle, 1 );
+    ASSERT_EQ( t.someText, (const char*)someText );
+    const unsigned char* moreText = sqlite3_column_text( outHandle, 2 );
+    ASSERT_EQ( t.moreText, (const char*)moreText );
+    sqlite3_finalize( outHandle );
+}
+
+//TEST_F( Sqlite, Load )
+//{
+//    *conn << TestTable::table().create();
+//    TestTable t;
+//    t.id = 1;
+//    t.someText = "load";
+//    t.moreText = "test";
+//    conn->insert( t );
+//    TestTable t2;
+//    conn->load( t2 );
+//    ASSERT_EQ( t.id, t2.id );
+//    ASSERT_EQ( t.someText, t2.someText );
+//    ASSERT_EQ( t.moreText, t2.moreText);
+//}
 
 int main( int argc, char **argv )
 {

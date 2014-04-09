@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <string>
 #include <sqlite3.h>
+#include <sstream>
 
 /*
  * Heavily inspired from https://github.com/burner/sweet.hpp/blob/master/sweetql.hpp
@@ -56,6 +57,7 @@ class Traits<int>
 {
     public:
         static constexpr const char* name = "INT";
+        static constexpr const bool need_escape = false;
 };
 
 template <>
@@ -63,8 +65,10 @@ class Traits<std::string>
 {
     public:
         static constexpr const char* name = "VARCHAR (255)";
+        static constexpr const bool need_escape = true;
 };
 
+template <typename T>
 class Attribute
 {
     public:
@@ -75,36 +79,46 @@ class Attribute
 
         const std::string& name() const { return m_name; }
         virtual const char* typeName() const = 0;
+        virtual std::string insert(const T& record) const = 0;
 
     private:
         std::string m_name;
 };
 
-template <typename T, typename U>
-class Column : public Attribute
+template <typename TYPE, typename CLASS>
+class Column : public Attribute<CLASS>
 {
     public:
-        Column(T U::* fieldPtr, const std::string& name)
-            : Attribute(name)
+        Column(TYPE CLASS::* fieldPtr, const std::string& name)
+            : Attribute<CLASS>(name)
             , m_fieldPtr( fieldPtr )
         {
         }
 
         virtual const char* typeName() const
         {
-            return Traits<T>::name;
+            return Traits<TYPE>::name;
+        }
+
+        virtual std::string insert(const CLASS& record) const
+        {
+            std::ostringstream oss;
+            oss << record.*m_fieldPtr;
+            if (Traits<TYPE>::need_escape)
+                return "\"" + oss.str() + "\"";
+            return oss.str();
         }
 
     private:
-        T U::* m_fieldPtr;
+        TYPE CLASS::* m_fieldPtr;
 };
 
-template <typename T, typename U>
-class PrimaryKey : public Column<T, U>
+template <typename TYPE, typename CLASS>
+class PrimaryKey : public Column<TYPE, CLASS>
 {
     public:
-        PrimaryKey(T U::* fieldPtr, const std::string& name)
-            : Column<T, U>( fieldPtr, name )
+        PrimaryKey(TYPE CLASS::* fieldPtr, const std::string& name)
+            : Column<TYPE, CLASS>( fieldPtr, name )
         {
         }
 };

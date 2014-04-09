@@ -38,3 +38,9 @@ Table::attributes() const
 {
     return m_attributes;
 }
+
+const Table::AttributePtr
+Table::primaryKey() const
+{
+    return m_primaryKey;
+}

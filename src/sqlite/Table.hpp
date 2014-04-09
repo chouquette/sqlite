@@ -84,6 +84,7 @@ class Table
         Table(const std::string& name) : m_name(name) {}
         Operation create();
         const Attributes& attributes() const;
+        const AttributePtr primaryKey() const;
 
     private:
         std::string m_name;

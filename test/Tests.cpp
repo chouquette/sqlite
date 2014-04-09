@@ -83,6 +83,7 @@ TEST_F (Sqlite, Create)
 
     }
     ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_DONE );
+    ASSERT_EQ( TestTable::table().primaryKey()->name(), "id" );
     sqlite3_finalize( outHandle );
 
 }

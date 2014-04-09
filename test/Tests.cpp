@@ -63,7 +63,7 @@ class Sqlite : public testing::Test
 
 TEST_F (Sqlite, Create)
 {
-    *conn << TestTable::table().create();
+    conn->execute( TestTable::table().create() );
     ASSERT_TRUE(conn->isValid());
     const char* checkTableRequest = "pragma table_info(TestTable)";
     sqlite3_stmt* outHandle;
@@ -85,17 +85,16 @@ TEST_F (Sqlite, Create)
     ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_DONE );
     ASSERT_EQ( TestTable::table().primaryKey()->name(), "id" );
     sqlite3_finalize( outHandle );
-
 }
 
 TEST_F( Sqlite, Insert )
 {
-    *conn << TestTable::table().create();
+    conn->execute( TestTable::table().create() );
     TestTable t;
     t.primaryKey = 1;
     t.someText = "sea";
     t.moreText = "otter";
-    *conn << TestTable::table().insert( t );
+    conn->execute( TestTable::table().insert( t ) );
     ASSERT_TRUE( conn->isValid() );
     const char* listEntries = "SELECT * FROM TestTable";
     sqlite3_stmt* outHandle;
@@ -111,20 +110,51 @@ TEST_F( Sqlite, Insert )
     sqlite3_finalize( outHandle );
 }
 
-//TEST_F( Sqlite, Load )
-//{
-//    *conn << TestTable::table().create();
-//    TestTable t;
-//    t.id = 1;
-//    t.someText = "load";
-//    t.moreText = "test";
-//    conn->insert( t );
-//    TestTable t2;
-//    conn->load( t2 );
-//    ASSERT_EQ( t.id, t2.id );
-//    ASSERT_EQ( t.someText, t2.someText );
-//    ASSERT_EQ( t.moreText, t2.moreText);
-//}
+TEST_F( Sqlite, LoadAll )
+{
+    conn->execute( TestTable::table().create() );
+    TestTable ts[10];
+    for (int i = 0; i < 10; ++i)
+    {
+        TestTable& t = ts[i];
+        t.id = i;
+        t.someText = "load" + (char)(i + '0');
+        t.moreText = "test" + (char)(i + '0');
+        conn->execute( TestTable::table().insert( t ) );
+    }
+    std::vector<TestTable> t2s = conn->execute( TestTable::table().fetch() );
+
+    ASSERT_EQ(t2s.size(), 10);
+    for (int i = 0; i < 10; ++i)
+    {
+        const TestTable& t = ts[i];
+        const TestTable& t2 = t2s[i];
+        ASSERT_EQ( t.id, t2.id );
+        ASSERT_EQ( t.someText, t2.someText );
+        ASSERT_EQ( t.moreText, t2.moreText);
+    }
+}
+
+TEST_F( Sqlite, LoadByPrimaryKey )
+{
+    conn->execute( TestTable::table().create() );
+    TestTable ts[10];
+    for (int i = 0; i < 10; ++i)
+    {
+        TestTable& t = ts[i];
+        t.id = i;
+        t.someText = "load" + (char)(i + '0');
+        t.moreText = "test" + (char)(i + '0');
+        conn->execute( TestTable::table().insert( t ) );
+    }
+    TestTable t2 = conn->execute( TestTable::table().fetchOne(
+                                vsqlite::where( TestTable::table().primaryKey() == 5 ) ) );
+
+    TestTable& t = ts[5];
+    ASSERT_EQ( t.id, t2.id );
+    ASSERT_EQ( t.someText, t2.someText );
+    ASSERT_EQ( t.moreText, t2.moreText);
+}
 
 int main( int argc, char **argv )
 {

@@ -36,6 +36,16 @@
 namespace vsqlite
 {
 
+template <template <typename...> class REF, typename TESTED>
+struct is_instantiation_of : std::false_type
+{
+};
+
+template <template <typename...> class REF, typename... TS>
+struct is_instantiation_of<REF, REF<TS...>> : std::true_type
+{
+};
+
 template <typename T>
 class Traits
 {
@@ -88,6 +98,17 @@ class Column : public Attribute
     private:
         T U::* m_fieldPtr;
 };
+
+template <typename T, typename U>
+class PrimaryKey : public Column<T, U>
+{
+    public:
+        PrimaryKey(T U::* fieldPtr, const std::string& name)
+            : Column<T, U>( fieldPtr, name )
+        {
+        }
+};
+
 
 class Operation
 {

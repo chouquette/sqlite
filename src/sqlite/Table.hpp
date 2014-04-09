@@ -24,7 +24,7 @@
 #define TABLE_HPP
 
 #include "sqlite.hpp"
-
+#include <iostream>
 namespace vsqlite
 {
 
@@ -36,11 +36,13 @@ class Table
 
     private:
         template <typename T>
-        void appendColumn(T column)
+        void appendColumn(std::shared_ptr<T> column)
         {
-            static_assert(std::is_base_of<AttributePtr, T>::value,
+            static_assert(std::is_base_of<Attribute, T>::value,
                            "All table fields must inherit Attribute class");
             //FIXME: static_assert that column is an Attribute instance
+            if (is_instantiation_of<PrimaryKey, T>::value)
+                m_primaryKey = column;
             m_attributes.push_back(column);
         }
 
@@ -68,9 +70,15 @@ class Table
         }
 
         template <typename T, typename U>
-        static std::shared_ptr<Attribute> createField(T U::* attributePtr, const std::string& name)
+        static std::shared_ptr<Column<T,U>> createField(T U::* attributePtr, const std::string& name)
         {
             return std::make_shared<Column<T, U>>(attributePtr, name);
+        }
+
+        template <typename T, typename U>
+        static std::shared_ptr<PrimaryKey<T, U>> createPrimaryKey(T U::* attributePtr, const std::string& name)
+        {
+            return std::make_shared<PrimaryKey<T, U>>(attributePtr, name);
         }
 
         Table(const std::string& name) : m_name(name) {}
@@ -79,7 +87,8 @@ class Table
 
     private:
         std::string m_name;
-        std::vector<std::shared_ptr<Attribute>> m_attributes;
+        AttributePtr m_primaryKey;
+        std::vector<AttributePtr> m_attributes;
 };
 
 }

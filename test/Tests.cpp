@@ -34,7 +34,7 @@ class TestTable
         {
             static vsqlite::Table table =
                     vsqlite::Table::Create("TestTable",
-                                           vsqlite::Table::createField(&TestTable::primaryKey, "id"),
+                                           vsqlite::Table::createPrimaryKey(&TestTable::primaryKey, "id"),
                                            vsqlite::Table::createField(&TestTable::someText, "text"),
                                            vsqlite::Table::createField(&TestTable::moreText, "otherField") );
             return table;

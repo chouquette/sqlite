@@ -49,22 +49,22 @@ DBConnection::errorMsg() const
     return sqlite3_errmsg( m_db );
 }
 
-DBConnection&
-DBConnection::operator<<(const Operation& op)
+bool
+DBConnection::execute(const Operation& op)
 {
     if ( m_isValid == false )
     {
         fprintf(stderr, "Ignoring request on invalid connection");
-        return *this;
+        return false;
     }
     char* errorMessage = NULL;
     if ( sqlite3_exec( m_db, op.m_request.c_str(), op.m_callback, NULL, &errorMessage) != SQLITE_OK)
     {
         fprintf(stderr, "SQLite error: %s", errorMessage);
         sqlite3_free( errorMessage );
-        m_isValid = false;
+        return false;
     }
-    return *this;
+    return true;
 }
 
 sqlite3*

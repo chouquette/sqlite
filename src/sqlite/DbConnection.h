@@ -40,7 +40,7 @@ class DBConnection
         bool isValid() const;
         const char* errorMsg() const;
 
-        DBConnection& operator<<(const Operation& op);
+        bool execute( const Operation& op );
 
         // For test purposes. There might be a better way.
         sqlite3*    rawConnection();

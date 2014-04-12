@@ -224,16 +224,8 @@ class DBConnection
         std::vector<T> parseResults( sqlite3_stmt* statement )
         {
             std::vector<T> results;
-            int nbRows = sqlite3_data_count( statement );
-            for (int i = 0; i < nbRows; ++i )
+            while ( sqlite3_step( statement ) != SQLITE_DONE )
             {
-                int resultCode = sqlite3_step( statement );
-                if ( resultCode == SQLITE_DONE )
-                {
-                    std::cerr << "Unexpected early end of results. " << nbRows << " were expected. Got only "
-                                 << i + 1 << std::endl;
-                    break;
-                }
                 T row;
                 auto& attributes = T::table().attributes();
                 for ( auto a : attributes )

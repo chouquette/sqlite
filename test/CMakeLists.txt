@@ -35,8 +35,11 @@ add_executable(unittest ${TEST_SRCS})
 add_dependencies(unittest gtest-dependency)
 
 
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
+find_package(Sqlite3 REQUIRED)
+target_link_libraries(unittest ${SQLITE3_LIBRARIES})
+
 target_link_libraries(unittest gtest gtest_main)
-target_link_libraries(unittest MediaLibrary)
 # Also add pthread, as gtest requires it
 if(UNIX)
     target_link_libraries(unittest "pthread")

@@ -24,7 +24,6 @@
 #include <string>
 
 #include "sqlite/sqlite.hpp"
-#include "sqlite/DbConnection.h"
 #include "sqlite/Table.hpp"
 
 class TestTable
@@ -108,30 +107,30 @@ TEST_F( Sqlite, Insert )
     sqlite3_finalize( outHandle );
 }
 
-//TEST_F( Sqlite, LoadAll )
-//{
-//    conn->execute( TestTable::table().create() );
-//    TestTable ts[10];
-//    for (int i = 0; i < 10; ++i)
-//    {
-//        TestTable& t = ts[i];
-//        t.id = i;
-//        t.someText = "load" + (char)(i + '0');
-//        t.moreText = "test" + (char)(i + '0');
-//        conn->execute( TestTable::table().insert( t ) );
-//    }
-//    std::vector<TestTable> t2s = conn->execute( TestTable::table().fetch() );
+TEST_F( Sqlite, LoadAll )
+{
+    ASSERT_TRUE( conn->execute( TestTable::table().create() ) );
+    TestTable ts[10];
+    for (int i = 0; i < 10; ++i)
+    {
+        TestTable& t = ts[i];
+        t.primaryKey = i;
+        t.someText = "load" + (char)(i + '0');
+        t.moreText = "test" + (char)(i + '0');
+        ASSERT_TRUE( conn->execute( TestTable::table().insert( t ) ) );
+    }
+    std::vector<TestTable> t2s = conn->execute( TestTable::table().fetch() );
 
-//    ASSERT_EQ(t2s.size(), 10);
-//    for (int i = 0; i < 10; ++i)
-//    {
-//        const TestTable& t = ts[i];
-//        const TestTable& t2 = t2s[i];
-//        ASSERT_EQ( t.id, t2.id );
-//        ASSERT_EQ( t.someText, t2.someText );
-//        ASSERT_EQ( t.moreText, t2.moreText);
-//    }
-//}
+    ASSERT_EQ(t2s.size(), 10);
+    for (int i = 0; i < 10; ++i)
+    {
+        const TestTable& t = ts[i];
+        const TestTable& t2 = t2s[i];
+        ASSERT_EQ( t.primaryKey, t2.primaryKey );
+        ASSERT_EQ( t.someText, t2.someText );
+        ASSERT_EQ( t.moreText, t2.moreText);
+    }
+}
 
 //TEST_F( Sqlite, LoadByPrimaryKey )
 //{
@@ -140,7 +139,7 @@ TEST_F( Sqlite, Insert )
 //    for (int i = 0; i < 10; ++i)
 //    {
 //        TestTable& t = ts[i];
-//        t.id = i;
+//        t.primaryKey = i;
 //        t.someText = "load" + (char)(i + '0');
 //        t.moreText = "test" + (char)(i + '0');
 //        conn->execute( TestTable::table().insert( t ) );
@@ -149,7 +148,7 @@ TEST_F( Sqlite, Insert )
 //                                vsqlite::where( TestTable::table().primaryKey() == 5 ) ) );
 
 //    TestTable& t = ts[5];
-//    ASSERT_EQ( t.id, t2.id );
+//    ASSERT_EQ( t.primaryKey, t2.primaryKey );
 //    ASSERT_EQ( t.someText, t2.someText );
 //    ASSERT_EQ( t.moreText, t2.moreText);
 //}

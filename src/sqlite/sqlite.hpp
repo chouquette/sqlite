@@ -58,6 +58,7 @@ class Traits<int>
     public:
         static constexpr const char* name = "INT";
         static constexpr const bool need_escape = false;
+        static constexpr int (* const Load)(sqlite3_stmt*, int) = &sqlite3_column_int;
 };
 
 template <>
@@ -66,6 +67,7 @@ class Traits<std::string>
     public:
         static constexpr const char* name = "VARCHAR (255)";
         static constexpr const bool need_escape = true;
+        static constexpr const unsigned char* (* const Load)(sqlite3_stmt*, int) = &sqlite3_column_text;
 };
 
 template <typename T>
@@ -80,6 +82,7 @@ class Attribute
         const std::string& name() const { return m_name; }
         virtual const char* typeName() const = 0;
         virtual std::string insert(const T& record) const = 0;
+        virtual void load(sqlite3_stmt* stmt, T& record) const = 0;
 
     private:
         std::string m_name;
@@ -109,6 +112,15 @@ class Column : public Attribute<CLASS>
             return oss.str();
         }
 
+        virtual void load( sqlite3_stmt *stmt, CLASS &record ) const
+        {
+            // When using string, we need to cast the result from Traits::Load from unsigned char to char.
+            // This will be a no-op for other types
+            using LoadedType = typename std::conditional<std::is_same<TYPE, std::string>::value, char*, TYPE>::type;
+            LoadedType value = (LoadedType)Traits<TYPE>::Load( stmt, 0 );
+            record.*m_fieldPtr = value;
+        }
+
     private:
         TYPE CLASS::* m_fieldPtr;
 };
@@ -123,22 +135,120 @@ class PrimaryKey : public Column<TYPE, CLASS>
         }
 };
 
-
 class Operation
 {
     public:
-        typedef int(*Callback)(void*,int,char**,char**);
-        Operation(const std::string& request, Callback cb)
+        Operation(const std::string& request)
             : m_request( request )
-            , m_callback( cb )
         {
         }
 
     private:
         std::string m_request;
-        Callback m_callback;
 
         friend class DBConnection;
+};
+
+template <typename T>
+class FetchOperation : public Operation
+{
+    public:
+        FetchOperation(const std::string& request) : Operation(request) {}
+};
+
+class InsertOrUpdateOperation : public Operation
+{
+    public:
+        InsertOrUpdateOperation(const std::string& request) : Operation(request) {}
+};
+
+class DBConnection
+{
+    public:
+        DBConnection(const std::string& dbPath)
+        {
+            int res = sqlite3_open( dbPath.c_str(), &m_db );
+            m_isValid = ( res == 0 );
+        }
+
+        ~DBConnection()
+        {
+            sqlite3_close( m_db );
+        }
+
+        bool isValid() const { return m_isValid; }
+        const char* errorMsg() const { return sqlite3_errmsg( m_db ); }
+
+        // For test purposes. There might be a better way.
+        sqlite3*    rawConnection() { return m_db; }
+
+        template <typename T>
+        std::vector<T> execute(const FetchOperation<T>& op)
+        {
+            using ResType = std::vector<T>;
+            if ( m_isValid == false )
+            {
+                fprintf(stderr, "Ignoring request on invalid connection");
+                return ResType();
+            }
+            sqlite3_stmt* statement = NULL;
+            int resultCode = sqlite3_prepare_v2( m_db, op.m_request.c_str(), -1, &statement, NULL );
+            if ( resultCode != SQLITE_OK )
+                return ResType();
+
+            ResType result = parseResults<T>( statement );
+            sqlite3_finalize( statement );
+            return result;
+        }
+
+        bool execute(const InsertOrUpdateOperation &op)
+        {
+
+            if ( m_isValid == false )
+            {
+                fprintf(stderr, "Ignoring request on invalid connection");
+                return false;
+            }
+            char* errorMessage = NULL;
+            if ( sqlite3_exec( m_db, op.m_request.c_str(), NULL, NULL, &errorMessage) != SQLITE_OK)
+            {
+                fprintf(stderr, "SQLite error: %s", errorMessage);
+                sqlite3_free( errorMessage );
+                return false;
+            }
+            return true;
+        }
+
+    private:
+        template <typename T>
+        std::vector<T> parseResults( sqlite3_stmt* statement )
+        {
+            std::vector<T> results;
+            int nbRows = sqlite3_data_count( statement );
+            for (int i = 0; i < nbRows; ++i )
+            {
+                int resultCode = sqlite3_step( statement );
+                if ( resultCode == SQLITE_DONE )
+                {
+                    std::cerr << "Unexpected early end of results. " << nbRows << " were expected. Got only "
+                                 << i + 1 << std::endl;
+                    break;
+                }
+                T row;
+                auto& attributes = T::table().attributes();
+                for ( auto a : attributes )
+                {
+                    a->load( statement, row );
+                }
+
+                results.push_back( std::move( row ) );
+            }
+            return results;
+        }
+
+    private:
+        sqlite3*    m_db;
+        bool        m_isValid;
 };
 
 }

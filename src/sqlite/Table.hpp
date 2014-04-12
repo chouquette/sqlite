@@ -111,7 +111,7 @@ class Table
 
         FetchOperation<T> fetch()
         {
-            return FetchOperation<T>("SELECT * FROM " + m_name);
+            return FetchOperation<T>( "SELECT * FROM " + m_name );
         }
 
     private:

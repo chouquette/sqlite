@@ -65,8 +65,7 @@ TEST_F (Sqlite, Create)
     ASSERT_TRUE( conn->execute( TestTable::table().create() ) );
     const char* checkTableRequest = "pragma table_info(TestTable)";
     sqlite3_stmt* outHandle;
-    sqlite3_prepare_v2(conn->rawConnection(), checkTableRequest, strlen(checkTableRequest),
-                       &outHandle, NULL);
+    sqlite3_prepare_v2(conn->rawConnection(), checkTableRequest, -1, &outHandle, NULL);
     for (int i = 0; i < TestTable::table().attributes().size(); ++i)
     {
         auto attribute = TestTable::table().attributes()[i];
@@ -95,8 +94,7 @@ TEST_F( Sqlite, Insert )
     ASSERT_TRUE( conn->execute( TestTable::table().insert( t ) ) );
     const char* listEntries = "SELECT * FROM TestTable";
     sqlite3_stmt* outHandle;
-    sqlite3_prepare_v2(conn->rawConnection(), listEntries, strlen(listEntries),
-                       &outHandle, NULL);
+    sqlite3_prepare_v2(conn->rawConnection(), listEntries, -1, &outHandle, NULL);
     ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_ROW );
     int primaryKey = sqlite3_column_int( outHandle, 0 );
     ASSERT_TRUE( t.primaryKey == primaryKey );

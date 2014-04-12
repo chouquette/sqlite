@@ -115,8 +115,8 @@ TEST_F( Sqlite, LoadAll )
     {
         TestTable& t = ts[i];
         t.primaryKey = i;
-        t.someText = "load" + (char)(i + '0');
-        t.moreText = "test" + (char)(i + '0');
+        t.someText = std::string("load") + (char)(i + '0');
+        t.moreText = std::string("test") + (char)(i + '0');
         ASSERT_TRUE( conn->execute( TestTable::table().insert( t ) ) );
     }
     std::vector<TestTable> t2s = conn->execute( TestTable::table().fetch() );

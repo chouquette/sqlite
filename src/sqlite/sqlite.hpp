@@ -151,7 +151,7 @@ class Operation
         }
 
         Operation( const Operation& op ) = delete;
-        Operation( Operation&& op ) = delete;
+        Operation( Operation&& op ) = default;
 
         bool execute( sqlite3* db )
         {
@@ -203,7 +203,7 @@ class DBConnection
         sqlite3*    rawConnection() { return m_db; }
 
         template <typename T>
-        std::vector<T> execute(std::unique_ptr<FetchOperation<T>> op)
+        std::vector<T> execute(FetchOperation<T>&& op)
         {
             using ResType = std::vector<T>;
             if ( m_isValid == false )
@@ -211,28 +211,28 @@ class DBConnection
                 std::cerr << "Ignoring request on invalid connection" << std::endl;
                 return ResType();
             }
-            if ( op->execute( m_db ) == false )
+            if ( op.execute( m_db ) == false )
                 return ResType();
 
-            ResType result = parseResults<T>( *op );
+            ResType result = parseResults<T>( op );
             return result;
             // The operation & the associated sqlite3_stmt now falls out of scope and is cleaned
         }
 
-        bool execute(std::unique_ptr<InsertOrUpdateOperation> op)
+        bool execute(InsertOrUpdateOperation&& op)
         {
             if ( m_isValid == false )
             {
                 std::cerr << "Ignoring request on invalid connection" << std::endl;
                 return false;
             }
-            if ( op->execute( m_db ) == false )
+            if ( op.execute( m_db ) == false )
             {
                 std::cerr << "SQLite error: " << errorMsg() << std::endl;
                 return false;
             }
             // We still need to step on the request for it to be executed.
-            return sqlite3_step( *op );
+            return sqlite3_step( op );
             // The operation & the associated sqlite3_stmt now falls out of scope and is cleaned
         }
 

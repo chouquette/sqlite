@@ -160,14 +160,18 @@ class Attribute
             return Predicate( m_name, bindFunction );
         }
 
-        Predicate operator==(const std::string& value) const
+        Predicate operator==( const std::string& value ) const
         {
             char* copy = strdup( value.c_str() );
             auto bindFunction = [copy](sqlite3_stmt* stmt, int bindIndex)
             {
-                return Traits<T>::Bind( stmt, bindIndex, copy, -1, free );
+                return Traits<std::string>::Bind( stmt, bindIndex, copy, -1, free );
             };
             return Predicate( m_name, bindFunction );
+        }
+        Predicate operator==( const char* value ) const
+        {
+            return operator==( std::string( value ) );
         }
 
     protected:

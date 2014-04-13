@@ -116,6 +116,17 @@ class Table
             return Operation<T>( "SELECT * FROM " + m_name );
         }
 
+        const AttributePtr column( const std::string& name )
+        {
+            for ( auto a : m_attributes )
+            {
+                if ( a->name() == name )
+                    return a;
+
+            }
+            return nullptr;
+        }
+
     private:
         std::string m_name;
         AttributePtr m_primaryKey;

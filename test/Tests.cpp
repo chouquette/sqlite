@@ -156,6 +156,28 @@ TEST_F( Sqlite, LoadByPrimaryKey )
     }
 }
 
+
+TEST_F( Sqlite, LoadByColumnValue )
+{
+    conn->execute( TestTable::table().create() );
+    TestTable ts[10];
+    for (int i = 0; i < 10; ++i)
+    {
+        TestTable& t = ts[i];
+        t.primaryKey = i;
+        t.someText = std::string("load") + (char)(i + '0');
+        t.moreText = std::string("test") + (char)(i + '0');
+        conn->execute( TestTable::table().insert( t ) );
+    }
+    auto attribute = TestTable::table().column( "otherField" );
+    ASSERT_TRUE( (bool)attribute );
+    auto res = conn->execute( TestTable::table().fetch().where( *attribute == "test5" ) );
+    ASSERT_EQ( 1, res.size() );
+    TestTable t = res[0];
+    ASSERT_EQ( 5, t.primaryKey );
+    ASSERT_EQ( "load5", t.someText );
+}
+
 int main( int argc, char **argv )
 {
   ::testing::InitGoogleTest(&argc, argv);

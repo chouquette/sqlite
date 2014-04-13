@@ -142,15 +142,31 @@ class Operation
     public:
         Operation(const std::string& request)
             : m_request( request )
+            , m_statement( NULL )
         {
         }
+        virtual ~Operation()
+        {
+            sqlite3_finalize( m_statement );
+        }
+
         Operation( const Operation& op ) = delete;
         Operation( Operation&& op ) = delete;
 
+        bool execute( sqlite3* db )
+        {
+            int resultCode = sqlite3_prepare_v2( db, m_request.c_str(), -1, &m_statement, NULL );
+            return resultCode == SQLITE_OK;
+        }
+        operator sqlite3_stmt*()
+        {
+            assert( m_statement != NULL );
+            return m_statement;
+        }
+
     private:
         std::string m_request;
-
-        friend class DBConnection;
+        sqlite3_stmt* m_statement;
 };
 
 template <typename T>
@@ -172,7 +188,7 @@ class DBConnection
         DBConnection(const std::string& dbPath)
         {
             int res = sqlite3_open( dbPath.c_str(), &m_db );
-            m_isValid = ( res == 0 );
+            m_isValid = ( res == SQLITE_OK );
         }
 
         ~DBConnection()
@@ -192,34 +208,32 @@ class DBConnection
             using ResType = std::vector<T>;
             if ( m_isValid == false )
             {
-                fprintf(stderr, "Ignoring request on invalid connection");
+                std::cerr << "Ignoring request on invalid connection" << std::endl;
                 return ResType();
             }
-            sqlite3_stmt* statement = NULL;
-            int resultCode = sqlite3_prepare_v2( m_db, op->m_request.c_str(), -1, &statement, NULL );
-            if ( resultCode != SQLITE_OK )
+            if ( op->execute( m_db ) == false )
                 return ResType();
 
-            ResType result = parseResults<T>( statement );
-            sqlite3_finalize( statement );
+            ResType result = parseResults<T>( *op );
             return result;
+            // The operation & the associated sqlite3_stmt now falls out of scope and is cleaned
         }
 
         bool execute(std::unique_ptr<InsertOrUpdateOperation> op)
         {
             if ( m_isValid == false )
             {
-                fprintf(stderr, "Ignoring request on invalid connection");
+                std::cerr << "Ignoring request on invalid connection" << std::endl;
                 return false;
             }
-            char* errorMessage = NULL;
-            if ( sqlite3_exec( m_db, op->m_request.c_str(), NULL, NULL, &errorMessage) != SQLITE_OK)
+            if ( op->execute( m_db ) == false )
             {
-                fprintf(stderr, "SQLite error: %s", errorMessage);
-                sqlite3_free( errorMessage );
+                std::cerr << "SQLite error: " << errorMsg() << std::endl;
                 return false;
             }
-            return true;
+            // We still need to step on the request for it to be executed.
+            return sqlite3_step( *op );
+            // The operation & the associated sqlite3_stmt now falls out of scope and is cleaned
         }
 
     private:

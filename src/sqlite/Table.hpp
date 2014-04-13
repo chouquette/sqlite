@@ -44,6 +44,7 @@ class Table
             //FIXME: static_assert that column is an Attribute instance
             if (is_instantiation_of<PrimaryKey, C>::value)
                 m_primaryKey = column;
+            column->setColumnIndex( m_attributes.size() );
             m_attributes.push_back(column);
         }
 

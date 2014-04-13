@@ -83,9 +83,11 @@ class Attribute
         virtual const char* typeName() const = 0;
         virtual std::string insert(const T& record) const = 0;
         virtual void load(sqlite3_stmt* stmt, T& record) const = 0;
+        void setColumnIndex( int index ) { m_columnIndex = index; }
 
-    private:
+    protected:
         std::string m_name;
+        int m_columnIndex;
 };
 
 template <typename TYPE, typename CLASS>
@@ -117,7 +119,7 @@ class Column : public Attribute<CLASS>
             // When using string, we need to cast the result from Traits::Load from unsigned char to char.
             // This will be a no-op for other types
             using LoadedType = typename std::conditional<std::is_same<TYPE, std::string>::value, char*, TYPE>::type;
-            LoadedType value = (LoadedType)Traits<TYPE>::Load( stmt, 0 );
+            LoadedType value = (LoadedType)Traits<TYPE>::Load( stmt, Attribute<CLASS>::m_columnIndex );
             record.*m_fieldPtr = value;
         }
 

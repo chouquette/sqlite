@@ -10,6 +10,7 @@ ExternalProject_Add(
     TIMEOUT 10
     # Disable install step
     INSTALL_COMMAND ""
+    UPDATE_COMMAND ""
     # Wrap download, configure and build steps in a script to log output
     LOG_DOWNLOAD ON
     LOG_CONFIGURE ON

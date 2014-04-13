@@ -66,9 +66,9 @@ TEST_F (Sqlite, Create)
     const char* checkTableRequest = "pragma table_info(TestTable)";
     sqlite3_stmt* outHandle;
     sqlite3_prepare_v2(conn->rawConnection(), checkTableRequest, -1, &outHandle, NULL);
-    for (int i = 0; i < TestTable::table().attributes().size(); ++i)
+    for (int i = 0; i < TestTable::table().columns().size(); ++i)
     {
-        auto attribute = TestTable::table().attributes()[i];
+        auto attribute = TestTable::table().columns()[i];
         ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_ROW );
         // Name
         const unsigned char* columnName = sqlite3_column_text( outHandle, 1 );

@@ -32,20 +32,20 @@ template <typename T>
 class Table
 {
     public:
-        typedef std::shared_ptr<Attribute<T>> AttributePtr;
-        typedef std::vector<AttributePtr> Attributes;
+        typedef std::shared_ptr<Column<T>> ColumnPtr;
+        typedef std::vector<ColumnPtr> Columns;
 
     private:
         template <typename C>
         void appendColumn(std::shared_ptr<C> column)
         {
-            static_assert(std::is_base_of<Attribute<T>, C>::value,
+            static_assert(std::is_base_of<Column<T>, C>::value,
                            "All table fields must inherit Attribute class");
             //FIXME: static_assert that column is an Attribute instance
             if (is_instantiation_of<PrimaryKey, C>::value)
                 m_primaryKey = column;
-            column->setColumnIndex( m_attributes.size() );
-            m_attributes.push_back(column);
+            column->setColumnIndex( m_columns.size() );
+            m_columns.push_back(column);
         }
 
         template <typename C>
@@ -72,9 +72,9 @@ class Table
         }
 
         template <typename TYPE>
-        static std::shared_ptr<Column<TYPE, T>> createField(TYPE T::* attributePtr, const std::string& name)
+        static std::shared_ptr<ColumnImpl<TYPE, T>> createField(TYPE T::* attributePtr, const std::string& name)
         {
-            return std::make_shared<Column<TYPE, T>>(attributePtr, name);
+            return std::make_shared<ColumnImpl<TYPE, T>>(attributePtr, name);
         }
 
         template <typename TYPE>
@@ -88,20 +88,20 @@ class Table
         Operation<bool> create()
         {
             std::string query = "CREATE TABLE IF NOT EXISTS " + m_name + '(';
-            for (auto c : m_attributes)
+            for (auto c : m_columns)
               query += c->name() + ' ' + c->typeName() + ',';
             query.replace(query.end() - 1, query.end(), ")");
             return Operation<bool>(query);
         }
 
-        const Attributes& attributes() const { return m_attributes; }
-        const Attribute<T>& primaryKey() const { return *m_primaryKey; }
+        const Columns& columns() const { return m_columns; }
+        const Column<T>& primaryKey() const { return *m_primaryKey; }
 
         Operation<bool> insert(const T& record)
         {
             std::string insertInto = "INSERT INTO " + m_name + '(';
             std::string values = "VALUES (";
-            for (auto attr : m_attributes)
+            for (auto attr : m_columns)
             {
                 insertInto += attr->name() + ",";
                 values += attr->insert(record) + ",";
@@ -116,9 +116,9 @@ class Table
             return Operation<T>( "SELECT * FROM " + m_name );
         }
 
-        const AttributePtr column( const std::string& name )
+        const ColumnPtr column( const std::string& name )
         {
-            for ( auto a : m_attributes )
+            for ( auto a : m_columns )
             {
                 if ( a->name() == name )
                     return a;
@@ -129,8 +129,8 @@ class Table
 
     private:
         std::string m_name;
-        AttributePtr m_primaryKey;
-        std::vector<AttributePtr> m_attributes;
+        ColumnPtr m_primaryKey;
+        std::vector<ColumnPtr> m_columns;
 };
 
 }

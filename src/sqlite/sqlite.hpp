@@ -136,10 +136,10 @@ class WhereClause
 
 
 template <typename T>
-class Attribute
+class Column
 {
     public:
-        Attribute(const std::string& name)
+        Column(const std::string& name)
             : m_name( name )
         {
         }
@@ -180,11 +180,11 @@ class Attribute
 };
 
 template <typename TYPE, typename CLASS>
-class Column : public Attribute<CLASS>
+class ColumnImpl : public Column<CLASS>
 {
     public:
-        Column(TYPE CLASS::* fieldPtr, const std::string& name)
-            : Attribute<CLASS>(name)
+        ColumnImpl(TYPE CLASS::* fieldPtr, const std::string& name)
+            : Column<CLASS>(name)
             , m_fieldPtr( fieldPtr )
         {
         }
@@ -208,7 +208,7 @@ class Column : public Attribute<CLASS>
             // When using string, we need to cast the result from Traits::Load from unsigned char to char.
             // This will be a no-op for other types
             using LoadedType = typename std::conditional<std::is_same<TYPE, std::string>::value, char*, TYPE>::type;
-            LoadedType value = (LoadedType)Traits<TYPE>::Load( stmt, Attribute<CLASS>::m_columnIndex );
+            LoadedType value = (LoadedType)Traits<TYPE>::Load( stmt, Column<CLASS>::m_columnIndex );
             record.*m_fieldPtr = value;
         }
 
@@ -217,11 +217,11 @@ class Column : public Attribute<CLASS>
 };
 
 template <typename TYPE, typename CLASS>
-class PrimaryKey : public Column<TYPE, CLASS>
+class PrimaryKey : public ColumnImpl<TYPE, CLASS>
 {
     public:
         PrimaryKey(TYPE CLASS::* fieldPtr, const std::string& name)
-            : Column<TYPE, CLASS>( fieldPtr, name )
+            : ColumnImpl<TYPE, CLASS>( fieldPtr, name )
         {
         }
 };
@@ -336,7 +336,7 @@ class DBConnection
             while ( sqlite3_step( statement ) != SQLITE_DONE )
             {
                 T row;
-                auto& attributes = T::table().attributes();
+                auto& attributes = T::table().columns();
                 for ( auto a : attributes )
                 {
                     a->load( statement, row );

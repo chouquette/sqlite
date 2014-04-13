@@ -80,7 +80,7 @@ TEST_F (Sqlite, Create)
 
     }
     ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_DONE );
-    ASSERT_EQ( TestTable::table().primaryKey()->name(), "id" );
+    ASSERT_EQ( TestTable::table().primaryKey().name(), "id" );
     sqlite3_finalize( outHandle );
 }
 
@@ -130,26 +130,31 @@ TEST_F( Sqlite, LoadAll )
     }
 }
 
-//TEST_F( Sqlite, LoadByPrimaryKey )
-//{
-//    conn->execute( TestTable::table().create() );
-//    TestTable ts[10];
-//    for (int i = 0; i < 10; ++i)
-//    {
-//        TestTable& t = ts[i];
-//        t.primaryKey = i;
-//        t.someText = "load" + (char)(i + '0');
-//        t.moreText = "test" + (char)(i + '0');
-//        conn->execute( TestTable::table().insert( t ) );
-//    }
-//    TestTable t2 = conn->execute( TestTable::table().fetchOne(
-//                                vsqlite::where( TestTable::table().primaryKey() == 5 ) ) );
+TEST_F( Sqlite, LoadByPrimaryKey )
+{
+    conn->execute( TestTable::table().create() );
+    TestTable ts[10];
+    for (int i = 0; i < 10; ++i)
+    {
+        TestTable& t = ts[i];
+        t.primaryKey = i;
+        t.someText = std::string("load") + (char)(i + '0');
+        t.moreText = std::string("test") + (char)(i + '0');
+        conn->execute( TestTable::table().insert( t ) );
+    }
+    for ( int i = 0; i < 10; ++i )
+    {
+        std::vector<TestTable> t2s = conn->execute( TestTable::table().fetch().where
+                                                    ( TestTable::table().primaryKey() == i ) );
 
-//    TestTable& t = ts[5];
-//    ASSERT_EQ( t.primaryKey, t2.primaryKey );
-//    ASSERT_EQ( t.someText, t2.someText );
-//    ASSERT_EQ( t.moreText, t2.moreText);
-//}
+        ASSERT_EQ(1, t2s.size());
+        TestTable& t2 = t2s[0];
+        TestTable& t = ts[i];
+        ASSERT_EQ( t.primaryKey, t2.primaryKey );
+        ASSERT_EQ( t.someText, t2.someText );
+        ASSERT_EQ( t.moreText, t2.moreText);
+    }
+}
 
 int main( int argc, char **argv )
 {

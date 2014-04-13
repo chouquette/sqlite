@@ -48,27 +48,92 @@ struct is_instantiation_of<REF, REF<TS...>> : std::true_type
 };
 
 template <typename T>
-class Traits
+struct Traits
 {
 };
 
 template <>
-class Traits<int>
+struct Traits<int>
 {
-    public:
-        static constexpr const char* name = "INT";
-        static constexpr const bool need_escape = false;
-        static constexpr int (* const Load)(sqlite3_stmt*, int) = &sqlite3_column_int;
+    static constexpr const char* name = "INT";
+    static constexpr const bool need_escape = false;
+    static constexpr int (* const Load)(sqlite3_stmt*, int) = &sqlite3_column_int;
+    static constexpr int (* const Bind)(sqlite3_stmt*, int, int ) = &sqlite3_bind_int;
 };
 
 template <>
-class Traits<std::string>
+struct Traits<std::string>
+{
+    static constexpr const char* name = "VARCHAR (255)";
+    static constexpr const bool need_escape = true;
+    static constexpr const unsigned char* (* const Load)(sqlite3_stmt*, int) = &sqlite3_column_text;
+    static constexpr int (* const Bind)(sqlite3_stmt*, int, const char*, int, void(*)(void*) ) = &sqlite3_bind_text;
+};
+
+class Predicate
 {
     public:
-        static constexpr const char* name = "VARCHAR (255)";
-        static constexpr const bool need_escape = true;
-        static constexpr const unsigned char* (* const Load)(sqlite3_stmt*, int) = &sqlite3_column_text;
+        Predicate( const std::string& fieldName, std::function<int(sqlite3_stmt*, int)> bind )
+            : m_fieldName( fieldName )
+            , m_bind( bind )
+        {
+        }
+
+        Predicate( Predicate&& p ) = default;
+        const std::string& fieldName() const { return m_fieldName; }
+        int bind( sqlite3_stmt* stmt, int index )
+        {
+            return m_bind(stmt, index);
+        }
+
+    private:
+        std::string m_fieldName;
+        std::function<int(sqlite3_stmt*, int)> m_bind;
 };
+
+class WhereClause
+{
+    public:
+        WhereClause(){}
+        WhereClause( Predicate&& predicate )
+        {
+            m_predicates.push_back( std::move( predicate ) );
+        }
+        WhereClause( WhereClause&& ) = default;
+        WhereClause& operator=( WhereClause&& ) = default;
+
+        WhereClause( const WhereClause& ) = delete;
+
+        std::string generate() const
+        {
+            if ( m_predicates.empty() )
+                return {};
+            std::string res = " WHERE 1=1";
+            for ( auto& p : m_predicates )
+                res += " AND " + p.fieldName() + " == ?";
+            return res;
+        }
+
+        bool bind( sqlite3_stmt* statement )
+        {
+            int bindIndex = 1;
+            for ( auto& p : m_predicates )
+            {
+                int resultCode = p.bind( statement, bindIndex++ );
+                if ( resultCode != SQLITE_OK )
+                {
+                    std::cerr << "Failed to bind predicate " << p.fieldName()
+                              << ". Error code #" << resultCode<< std::endl;
+                    return false;
+                }
+            }
+            return true;
+        }
+
+    private:
+        std::vector<Predicate> m_predicates;
+};
+
 
 template <typename T>
 class Attribute
@@ -84,6 +149,26 @@ class Attribute
         virtual std::string insert(const T& record) const = 0;
         virtual void load(sqlite3_stmt* stmt, T& record) const = 0;
         void setColumnIndex( int index ) { m_columnIndex = index; }
+
+        template <typename V>
+        Predicate operator==(const V& value) const
+        {
+            auto bindFunction = [value](sqlite3_stmt* stmt, int bindIndex)
+            {
+                return Traits<V>::Bind( stmt, bindIndex, value );
+            };
+            return Predicate( m_name, bindFunction );
+        }
+
+        Predicate operator==(const std::string& value) const
+        {
+            char* copy = strdup( value.c_str() );
+            auto bindFunction = [copy](sqlite3_stmt* stmt, int bindIndex)
+            {
+                return Traits<T>::Bind( stmt, bindIndex, copy, -1, free );
+            };
+            return Predicate( m_name, bindFunction );
+        }
 
     protected:
         std::string m_name;
@@ -137,6 +222,7 @@ class PrimaryKey : public Column<TYPE, CLASS>
         }
 };
 
+template <typename T>
 class Operation
 {
     public:
@@ -155,8 +241,15 @@ class Operation
 
         bool execute( sqlite3* db )
         {
+            m_request += m_whereClause.generate();
             int resultCode = sqlite3_prepare_v2( db, m_request.c_str(), -1, &m_statement, NULL );
-            return resultCode == SQLITE_OK;
+            if ( resultCode != SQLITE_OK )
+            {
+                std::cerr << "Failed to execute request " << m_request << '\n'
+                             << "Error code: " << resultCode << std::endl;
+                return false;
+            }
+            return m_whereClause.bind( m_statement );
         }
         operator sqlite3_stmt*()
         {
@@ -164,22 +257,16 @@ class Operation
             return m_statement;
         }
 
+        Operation&& where( WhereClause&& clause )
+        {
+            m_whereClause = std::move( clause );
+            return std::move( *this );
+        }
+
     private:
         std::string m_request;
         sqlite3_stmt* m_statement;
-};
-
-template <typename T>
-class FetchOperation : public Operation
-{
-    public:
-        FetchOperation(const std::string& request) : Operation(request) {}
-};
-
-class InsertOrUpdateOperation : public Operation
-{
-    public:
-        InsertOrUpdateOperation(const std::string& request) : Operation(request) {}
+        WhereClause m_whereClause;
 };
 
 class DBConnection
@@ -203,7 +290,7 @@ class DBConnection
         sqlite3*    rawConnection() { return m_db; }
 
         template <typename T>
-        std::vector<T> execute(FetchOperation<T>&& op)
+        std::vector<T> execute(Operation<T>&& op)
         {
             using ResType = std::vector<T>;
             if ( m_isValid == false )
@@ -212,14 +299,15 @@ class DBConnection
                 return ResType();
             }
             if ( op.execute( m_db ) == false )
+            {
                 return ResType();
-
+            }
             ResType result = parseResults<T>( op );
             return result;
             // The operation & the associated sqlite3_stmt now falls out of scope and is cleaned
         }
 
-        bool execute(InsertOrUpdateOperation&& op)
+        bool execute(Operation<bool>&& op)
         {
             if ( m_isValid == false )
             {

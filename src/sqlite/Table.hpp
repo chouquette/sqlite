@@ -85,19 +85,19 @@ class Table
 
         Table(const std::string& name) : m_name(name) {}
 
-        InsertOrUpdateOperation create()
+        Operation<bool> create()
         {
             std::string query = "CREATE TABLE IF NOT EXISTS " + m_name + '(';
             for (auto c : m_attributes)
               query += c->name() + ' ' + c->typeName() + ',';
             query.replace(query.end() - 1, query.end(), ")");
-            return InsertOrUpdateOperation(query);
+            return Operation<bool>(query);
         }
 
         const Attributes& attributes() const { return m_attributes; }
-        const AttributePtr primaryKey() const { return m_primaryKey; }
+        const Attribute<T>& primaryKey() const { return *m_primaryKey; }
 
-        InsertOrUpdateOperation insert(const T& record)
+        Operation<bool> insert(const T& record)
         {
             std::string insertInto = "INSERT INTO " + m_name + '(';
             std::string values = "VALUES (";
@@ -108,12 +108,12 @@ class Table
             }
             insertInto.replace(insertInto.end() - 1, insertInto.end(), ")");
             values.replace(values.end() - 1, values.end(), ")");
-            return InsertOrUpdateOperation(insertInto + values + ';');
+            return Operation<bool>(insertInto + values + ';');
         }
 
-        FetchOperation<T> fetch()
+        Operation<T> fetch()
         {
-            return FetchOperation<T>( "SELECT * FROM " + m_name );
+            return Operation<T>( "SELECT * FROM " + m_name );
         }
 
     private:

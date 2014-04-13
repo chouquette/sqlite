@@ -144,6 +144,8 @@ class Operation
             : m_request( request )
         {
         }
+        Operation( const Operation& op ) = delete;
+        Operation( Operation&& op ) = delete;
 
     private:
         std::string m_request;
@@ -185,7 +187,7 @@ class DBConnection
         sqlite3*    rawConnection() { return m_db; }
 
         template <typename T>
-        std::vector<T> execute(const FetchOperation<T>& op)
+        std::vector<T> execute(std::unique_ptr<FetchOperation<T>> op)
         {
             using ResType = std::vector<T>;
             if ( m_isValid == false )
@@ -194,7 +196,7 @@ class DBConnection
                 return ResType();
             }
             sqlite3_stmt* statement = NULL;
-            int resultCode = sqlite3_prepare_v2( m_db, op.m_request.c_str(), -1, &statement, NULL );
+            int resultCode = sqlite3_prepare_v2( m_db, op->m_request.c_str(), -1, &statement, NULL );
             if ( resultCode != SQLITE_OK )
                 return ResType();
 
@@ -203,16 +205,15 @@ class DBConnection
             return result;
         }
 
-        bool execute(const InsertOrUpdateOperation &op)
+        bool execute(std::unique_ptr<InsertOrUpdateOperation> op)
         {
-
             if ( m_isValid == false )
             {
                 fprintf(stderr, "Ignoring request on invalid connection");
                 return false;
             }
             char* errorMessage = NULL;
-            if ( sqlite3_exec( m_db, op.m_request.c_str(), NULL, NULL, &errorMessage) != SQLITE_OK)
+            if ( sqlite3_exec( m_db, op->m_request.c_str(), NULL, NULL, &errorMessage) != SQLITE_OK)
             {
                 fprintf(stderr, "SQLite error: %s", errorMessage);
                 sqlite3_free( errorMessage );

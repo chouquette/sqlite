@@ -84,19 +84,19 @@ class Table
         }
 
         Table(const std::string& name) : m_name(name) {}
-        InsertOrUpdateOperation create()
+        std::unique_ptr<InsertOrUpdateOperation> create()
         {
             std::string query = "CREATE TABLE IF NOT EXISTS " + m_name + '(';
             for (auto c : m_attributes)
               query += c->name() + ' ' + c->typeName() + ',';
             query.replace(query.end() - 1, query.end(), ")");
-            return InsertOrUpdateOperation(query);
+            return std::unique_ptr<InsertOrUpdateOperation>( new InsertOrUpdateOperation(query) );
         }
 
         const Attributes& attributes() const { return m_attributes; }
         const AttributePtr primaryKey() const { return m_primaryKey; }
 
-        InsertOrUpdateOperation insert(const T& record)
+        std::unique_ptr<InsertOrUpdateOperation> insert(const T& record)
         {
             std::string insertInto = "INSERT INTO " + m_name + '(';
             std::string values = "VALUES (";
@@ -107,12 +107,12 @@ class Table
             }
             insertInto.replace(insertInto.end() - 1, insertInto.end(), ")");
             values.replace(values.end() - 1, values.end(), ")");
-            return InsertOrUpdateOperation(insertInto + values + ';');
+            return std::unique_ptr<InsertOrUpdateOperation>( new InsertOrUpdateOperation(insertInto + values + ';') );
         }
 
-        FetchOperation<T> fetch()
+        std::unique_ptr<FetchOperation<T>> fetch()
         {
-            return FetchOperation<T>( "SELECT * FROM " + m_name );
+            return std::unique_ptr<FetchOperation<T>>( new FetchOperation<T>( "SELECT * FROM " + m_name ) );
         }
 
     private:

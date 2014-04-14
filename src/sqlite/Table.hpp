@@ -105,25 +105,19 @@ class Table
         template <size_t N>
         Operation<bool> insert( const T(&records)[N] )
         {
-            std::string insertInto = "INSERT INTO " + m_name + '(';
-            for (auto attr : m_columns)
-            {
-                insertInto += attr->name() + ",";
-            }
-            insertInto.replace(insertInto.end() - 1, insertInto.end(), ")");
-            std::string values = "VALUES ";
+            std::string insertInto = "INSERT INTO " + m_name + " VALUES";
 
             for ( auto& r : records )
             {
-                values += '(';
+                insertInto += '(';
                 for ( auto attr : m_columns )
                 {
-                    values += attr->insert( r ) + ',';
+                    insertInto += attr->insert( r ) + ',';
                 }
-                values.replace(values.end() - 1, values.end(), "),");
+                insertInto.replace(insertInto.end() - 1, insertInto.end(), "),");
             }
-            values.replace(values.end() - 1, values.end(), ";");
-            return Operation<bool>(insertInto + values);
+            insertInto.replace(insertInto.end() - 1, insertInto.end(), ";");
+            return Operation<bool>( insertInto );
         }
 
         Operation<T> fetch()

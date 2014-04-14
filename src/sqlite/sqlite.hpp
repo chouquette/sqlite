@@ -240,6 +240,13 @@ class Operation
             sqlite3_finalize( m_statement );
         }
 
+        Operation& operator+=( Operation&& op )
+        {
+            m_request += op.m_request;
+            op.m_request = {};
+            return *this;
+        }
+
         Operation( const Operation& op ) = delete;
         Operation( Operation&& op ) = default;
 
@@ -268,6 +275,7 @@ class Operation
         }
 
     private:
+    public:
         std::string m_request;
         sqlite3_stmt* m_statement;
         WhereClause m_whereClause;
@@ -324,7 +332,10 @@ class DBConnection
                 return false;
             }
             // We still need to step on the request for it to be executed.
-            return sqlite3_step( op );
+            int res = sqlite3_step( op );
+            while ( res != SQLITE_DONE && res != SQLITE_ERROR )
+                res = sqlite3_step( op );
+            return res != SQLITE_ERROR;
             // The operation & the associated sqlite3_stmt now falls out of scope and is cleaned
         }
 

@@ -99,16 +99,31 @@ class Table
 
         Operation<bool> insert(const T& record)
         {
+            return insert<1>( { record } );
+        }
+
+        template <size_t N>
+        Operation<bool> insert( const T(&records)[N] )
+        {
             std::string insertInto = "INSERT INTO " + m_name + '(';
-            std::string values = "VALUES (";
             for (auto attr : m_columns)
             {
                 insertInto += attr->name() + ",";
-                values += attr->insert(record) + ",";
             }
             insertInto.replace(insertInto.end() - 1, insertInto.end(), ")");
-            values.replace(values.end() - 1, values.end(), ")");
-            return Operation<bool>(insertInto + values + ';');
+            std::string values = "VALUES ";
+
+            for ( auto& r : records )
+            {
+                values += '(';
+                for ( auto attr : m_columns )
+                {
+                    values += attr->insert( r ) + ',';
+                }
+                values.replace(values.end() - 1, values.end(), "),");
+            }
+            values.replace(values.end() - 1, values.end(), ";");
+            return Operation<bool>(insertInto + values);
         }
 
         Operation<T> fetch()

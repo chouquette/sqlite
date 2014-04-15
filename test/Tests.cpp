@@ -40,9 +40,9 @@ class TestTable
         }
 
     public:
-        int primaryKey;
-        std::string someText;
-        std::string moreText;
+        vsqlite::Column<int> primaryKey;
+        vsqlite::Column<std::string> someText;
+        vsqlite::Column<std::string> moreText;
 };
 
 static vsqlite::DBConnection* conn;
@@ -175,7 +175,7 @@ TEST_F( Sqlite, LoadByColumnValue )
     ASSERT_EQ( 1, res.size() );
     TestTable t = res[0];
     ASSERT_EQ( 5, t.primaryKey );
-    ASSERT_EQ( "load5", t.someText );
+    ASSERT_EQ( t.someText, "load5" );
 }
 
 int main( int argc, char **argv )

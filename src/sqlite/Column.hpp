@@ -28,6 +28,52 @@
 namespace vsqlite
 {
 
+
+template <typename T>
+class Column
+{
+    public:
+        bool isNull() const
+        {
+            return m_isNull;
+        }
+
+        T& operator=( const T& value )
+        {
+            m_value = value;
+            m_isNull = false;
+            return m_value;
+        }
+
+        T& operator=( T&& value )
+        {
+            m_value = std::move( value );
+            m_isNull = false;
+            return m_value;
+        }
+
+        bool operator==( const T& rvalue ) const
+        {
+            return m_value == rvalue;
+        }
+
+        operator T&()
+        {
+            assert( isNull() == false );
+            return m_value;
+        }
+
+        operator const T&() const
+        {
+            assert( isNull() == false );
+            return m_value;
+        }
+
+    private:
+        T    m_value;
+        bool m_isNull = true;
+};
+
 template <typename T>
 class ColumnSchema
 {
@@ -76,7 +122,7 @@ template <typename TYPE, typename CLASS>
 class ColumnSchemaImpl : public ColumnSchema<CLASS>
 {
     public:
-        ColumnSchemaImpl(TYPE CLASS::* fieldPtr, const std::string& name)
+        ColumnSchemaImpl(Column<TYPE> CLASS::* fieldPtr, const std::string& name)
             : ColumnSchema<CLASS>(name)
             , m_fieldPtr( fieldPtr )
         {
@@ -90,7 +136,7 @@ class ColumnSchemaImpl : public ColumnSchema<CLASS>
         virtual std::string insert(const CLASS& record) const
         {
             std::ostringstream oss;
-            oss << record.*m_fieldPtr;
+            oss << (TYPE)(record.*m_fieldPtr);
             if (Traits<TYPE>::need_escape)
                 return "\"" + oss.str() + "\"";
             return oss.str();
@@ -106,7 +152,7 @@ class ColumnSchemaImpl : public ColumnSchema<CLASS>
         }
 
     private:
-        TYPE CLASS::* m_fieldPtr;
+        Column<TYPE> CLASS::* m_fieldPtr;
 };
 
 
@@ -114,7 +160,7 @@ template <typename TYPE, typename CLASS>
 class PrimaryKey : public ColumnSchemaImpl<TYPE, CLASS>
 {
     public:
-        PrimaryKey(TYPE CLASS::* fieldPtr, const std::string& name)
+        PrimaryKey(Column<TYPE> CLASS::* fieldPtr, const std::string& name)
             : ColumnSchemaImpl<TYPE, CLASS>( fieldPtr, name )
         {
         }

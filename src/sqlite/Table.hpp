@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Table.cpp: Handles table related SQLite operations
+ * Table.hpp: Handles table related SQLite operations
  *****************************************************************************
  * Copyright (C) 2008-2014 VideoLAN
  *
@@ -24,7 +24,7 @@
 #define TABLE_HPP
 
 #include "sqlite.hpp"
-#include <iostream>
+
 namespace vsqlite
 {
 

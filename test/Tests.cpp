@@ -26,7 +26,7 @@
 #include "sqlite/sqlite.hpp"
 #include "sqlite/Table.hpp"
 
-class TestTable : vsqlite::Table<TestTable>
+class TestTable : public vsqlite::Table<TestTable>
 {
     public:
         static vsqlite::TableSchema<TestTable>& table()
@@ -83,14 +83,14 @@ TEST_F (Sqlite, Create)
     sqlite3_finalize( outHandle );
 }
 
-TEST_F( Sqlite, Insert )
+TEST_F( Sqlite, InsertOne )
 {
     ASSERT_TRUE( conn->execute( TestTable::table().create() ) );
     TestTable t;
     t.primaryKey = 1;
     t.someText = "sea";
     t.moreText = "otter";
-    ASSERT_TRUE( conn->execute( TestTable::table().insert( t ) ) );
+    ASSERT_TRUE( conn->execute( t.insert() ) );
     const char* listEntries = "SELECT * FROM TestTable";
     sqlite3_stmt* outHandle;
     sqlite3_prepare_v2(conn->rawConnection(), listEntries, -1, &outHandle, NULL);
@@ -115,7 +115,7 @@ TEST_F( Sqlite, LoadAll )
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
     }
-    ASSERT_TRUE( conn->execute( TestTable::table().insert( ts ) ) );
+    ASSERT_TRUE( conn->execute( TestTable::insert( ts ) ) );
     std::vector<TestTable> t2s = conn->execute( TestTable::table().fetch() );
 
     ASSERT_EQ(t2s.size(), 10);
@@ -140,7 +140,7 @@ TEST_F( Sqlite, LoadByPrimaryKey )
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
     }
-    conn->execute( TestTable::table().insert( ts ) );
+    conn->execute( TestTable::insert( ts ) );
     for ( int i = 0; i < 10; ++i )
     {
         std::vector<TestTable> t2s = conn->execute( TestTable::table().fetch().where
@@ -167,7 +167,7 @@ TEST_F( Sqlite, LoadByColumnValue )
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
     }
-    conn->execute( TestTable::table().insert( ts ) );
+    conn->execute( TestTable::insert( ts ) );
     auto attribute = TestTable::table().column( "otherField" );
     ASSERT_TRUE( (bool)attribute );
     auto res = conn->execute( TestTable::table().fetch().where( *attribute == "test5" ) );

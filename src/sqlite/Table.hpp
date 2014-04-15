@@ -48,31 +48,9 @@ class TableSchema
             return Operation<bool>(query);
         }
 
+        const std::string& name() const { return m_name; }
         const Columns& columns() const { return m_columns; }
         const ColumnSchema<T>& primaryKey() const { return *m_primaryKey; }
-
-        Operation<bool> insert(const T& record)
-        {
-            return insert<1>( { record } );
-        }
-
-        template <size_t N>
-        Operation<bool> insert( const T(&records)[N] )
-        {
-            std::string insertInto = "INSERT INTO " + m_name + " VALUES";
-
-            for ( auto& r : records )
-            {
-                insertInto += '(';
-                for ( auto attr : m_columns )
-                {
-                    insertInto += attr->insert( r ) + ',';
-                }
-                insertInto.replace(insertInto.end() - 1, insertInto.end(), "),");
-            }
-            insertInto.replace(insertInto.end() - 1, insertInto.end(), ";");
-            return Operation<bool>( insertInto );
-        }
 
         Operation<T> fetch()
         {
@@ -113,6 +91,31 @@ class TableSchema
 template <typename CLASS>
 class Table
 {
+    public:
+        Operation<bool> insert()
+        {
+            return Table::insert<1>( { static_cast<CLASS&>( *this ) } );
+        }
+
+        template <size_t N>
+        static Operation<bool> insert( const CLASS(&records)[N] )
+        {
+            std::string insertInto = "INSERT INTO " + CLASS::table().name() + " VALUES";
+
+            for ( auto& r : records )
+            {
+                insertInto += '(';
+                auto columns = CLASS::table().columns();
+                for ( auto attr : columns )
+                {
+                    insertInto += attr->insert( r ) + ',';
+                }
+                insertInto.replace(insertInto.end() - 1, insertInto.end(), "),");
+            }
+            insertInto.replace(insertInto.end() - 1, insertInto.end(), ";");
+            return Operation<bool>( insertInto );
+        }
+
     private:
         template <typename C>
         static void Register(TableSchema<CLASS>& t, C column)

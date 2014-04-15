@@ -29,13 +29,13 @@
 class TestTable
 {
     public:
-        static vsqlite::Table<TestTable>& table()
+        static vsqlite::TableSchema<TestTable>& table()
         {
             static auto table =
-                    vsqlite::Table<TestTable>::Create("TestTable",
-                                           vsqlite::Table<TestTable>::createPrimaryKey(&TestTable::primaryKey, "id"),
-                                           vsqlite::Table<TestTable>::createField(&TestTable::someText, "text"),
-                                           vsqlite::Table<TestTable>::createField(&TestTable::moreText, "otherField") );
+                    vsqlite::TableSchema<TestTable>::Create("TestTable",
+                                           vsqlite::TableSchema<TestTable>::createPrimaryKey(&TestTable::primaryKey, "id"),
+                                           vsqlite::TableSchema<TestTable>::createField(&TestTable::someText, "text"),
+                                           vsqlite::TableSchema<TestTable>::createField(&TestTable::moreText, "otherField") );
             return table;
         }
 

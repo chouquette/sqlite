@@ -29,17 +29,17 @@ namespace vsqlite
 {
 
 template <typename T>
-class Table
+class TableSchema
 {
     public:
-        typedef std::shared_ptr<Column<T>> ColumnPtr;
-        typedef std::vector<ColumnPtr> Columns;
+        typedef std::shared_ptr<ColumnSchema<T>> ColumnSchemaPtr;
+        typedef std::vector<ColumnSchemaPtr> Columns;
 
     private:
         template <typename C>
         void appendColumn(std::shared_ptr<C> column)
         {
-            static_assert(std::is_base_of<Column<T>, C>::value,
+            static_assert(std::is_base_of<ColumnSchema<T>, C>::value,
                            "All table fields must inherit Attribute class");
             //FIXME: static_assert that column is an Attribute instance
             if (is_instantiation_of<PrimaryKey, C>::value)
@@ -49,13 +49,13 @@ class Table
         }
 
         template <typename C>
-        static void Create(Table& t, C column)
+        static void Create(TableSchema& t, C column)
         {
             t.appendColumn(column);
         }
 
         template <typename C, typename... COLUMNS>
-        static void Create(Table& t, C column, COLUMNS... columns)
+        static void Create(TableSchema& t, C column, COLUMNS... columns)
         {
             t.appendColumn(column);
             Create(t, columns...);
@@ -64,17 +64,17 @@ class Table
     public:
 
         template <typename... COLUMNS>
-        static Table Create(const std::string& name, COLUMNS... columns)
+        static TableSchema Create(const std::string& name, COLUMNS... columns)
         {
-            Table t(name);
+            TableSchema t(name);
             Create(t, columns...);
             return t;
         }
 
         template <typename TYPE>
-        static std::shared_ptr<ColumnImpl<TYPE, T>> createField(TYPE T::* attributePtr, const std::string& name)
+        static std::shared_ptr<ColumnSchemaImpl<TYPE, T>> createField(TYPE T::* attributePtr, const std::string& name)
         {
-            return std::make_shared<ColumnImpl<TYPE, T>>(attributePtr, name);
+            return std::make_shared<ColumnSchemaImpl<TYPE, T>>(attributePtr, name);
         }
 
         template <typename TYPE>
@@ -83,7 +83,7 @@ class Table
             return std::make_shared<PrimaryKey<TYPE, T>>(attributePtr, name);
         }
 
-        Table(const std::string& name) : m_name(name) {}
+        TableSchema(const std::string& name) : m_name(name) {}
 
         Operation<bool> create()
         {
@@ -95,7 +95,7 @@ class Table
         }
 
         const Columns& columns() const { return m_columns; }
-        const Column<T>& primaryKey() const { return *m_primaryKey; }
+        const ColumnSchema<T>& primaryKey() const { return *m_primaryKey; }
 
         Operation<bool> insert(const T& record)
         {
@@ -125,7 +125,7 @@ class Table
             return Operation<T>( "SELECT * FROM " + m_name );
         }
 
-        const ColumnPtr column( const std::string& name )
+        const ColumnSchemaPtr column( const std::string& name )
         {
             for ( auto a : m_columns )
             {
@@ -138,8 +138,8 @@ class Table
 
     private:
         std::string m_name;
-        ColumnPtr m_primaryKey;
-        std::vector<ColumnPtr> m_columns;
+        ColumnSchemaPtr m_primaryKey;
+        std::vector<ColumnSchemaPtr> m_columns;
 };
 
 }

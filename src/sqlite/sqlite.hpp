@@ -136,10 +136,10 @@ class WhereClause
 
 
 template <typename T>
-class Column
+class ColumnSchema
 {
     public:
-        Column(const std::string& name)
+        ColumnSchema(const std::string& name)
             : m_name( name )
         {
         }
@@ -180,11 +180,11 @@ class Column
 };
 
 template <typename TYPE, typename CLASS>
-class ColumnImpl : public Column<CLASS>
+class ColumnSchemaImpl : public ColumnSchema<CLASS>
 {
     public:
-        ColumnImpl(TYPE CLASS::* fieldPtr, const std::string& name)
-            : Column<CLASS>(name)
+        ColumnSchemaImpl(TYPE CLASS::* fieldPtr, const std::string& name)
+            : ColumnSchema<CLASS>(name)
             , m_fieldPtr( fieldPtr )
         {
         }
@@ -208,7 +208,7 @@ class ColumnImpl : public Column<CLASS>
             // When using string, we need to cast the result from Traits::Load from unsigned char to char.
             // This will be a no-op for other types
             using LoadedType = typename std::conditional<std::is_same<TYPE, std::string>::value, char*, TYPE>::type;
-            LoadedType value = (LoadedType)Traits<TYPE>::Load( stmt, Column<CLASS>::m_columnIndex );
+            LoadedType value = (LoadedType)Traits<TYPE>::Load( stmt, ColumnSchema<CLASS>::m_columnIndex );
             record.*m_fieldPtr = value;
         }
 
@@ -217,11 +217,11 @@ class ColumnImpl : public Column<CLASS>
 };
 
 template <typename TYPE, typename CLASS>
-class PrimaryKey : public ColumnImpl<TYPE, CLASS>
+class PrimaryKey : public ColumnSchemaImpl<TYPE, CLASS>
 {
     public:
         PrimaryKey(TYPE CLASS::* fieldPtr, const std::string& name)
-            : ColumnImpl<TYPE, CLASS>( fieldPtr, name )
+            : ColumnSchemaImpl<TYPE, CLASS>( fieldPtr, name )
         {
         }
 };

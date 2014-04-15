@@ -26,16 +26,15 @@
 #include "sqlite/sqlite.hpp"
 #include "sqlite/Table.hpp"
 
-class TestTable
+class TestTable : vsqlite::Table<TestTable>
 {
     public:
         static vsqlite::TableSchema<TestTable>& table()
         {
-            static auto table =
-                    vsqlite::TableSchema<TestTable>::Create("TestTable",
-                                           vsqlite::TableSchema<TestTable>::createPrimaryKey(&TestTable::primaryKey, "id"),
-                                           vsqlite::TableSchema<TestTable>::createField(&TestTable::someText, "text"),
-                                           vsqlite::TableSchema<TestTable>::createField(&TestTable::moreText, "otherField") );
+            static auto table = Register("TestTable",
+                                           createPrimaryKey(&TestTable::primaryKey, "id"),
+                                           createField(&TestTable::someText, "text"),
+                                           createField(&TestTable::moreText, "otherField") );
             return table;
         }
 

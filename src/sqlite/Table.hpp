@@ -28,60 +28,14 @@
 namespace vsqlite
 {
 
+template <typename T> class Table;
+
 template <typename T>
 class TableSchema
 {
     public:
         typedef std::shared_ptr<ColumnSchema<T>> ColumnSchemaPtr;
         typedef std::vector<ColumnSchemaPtr> Columns;
-
-    private:
-        template <typename C>
-        void appendColumn(std::shared_ptr<C> column)
-        {
-            static_assert(std::is_base_of<ColumnSchema<T>, C>::value,
-                           "All table fields must inherit Attribute class");
-            //FIXME: static_assert that column is an Attribute instance
-            if (is_instantiation_of<PrimaryKey, C>::value)
-                m_primaryKey = column;
-            column->setColumnIndex( m_columns.size() );
-            m_columns.push_back(column);
-        }
-
-        template <typename C>
-        static void Create(TableSchema& t, C column)
-        {
-            t.appendColumn(column);
-        }
-
-        template <typename C, typename... COLUMNS>
-        static void Create(TableSchema& t, C column, COLUMNS... columns)
-        {
-            t.appendColumn(column);
-            Create(t, columns...);
-        }
-
-    public:
-
-        template <typename... COLUMNS>
-        static TableSchema Create(const std::string& name, COLUMNS... columns)
-        {
-            TableSchema t(name);
-            Create(t, columns...);
-            return t;
-        }
-
-        template <typename TYPE>
-        static std::shared_ptr<ColumnSchemaImpl<TYPE, T>> createField(Column<TYPE> T::* attributePtr, const std::string& name)
-        {
-            return std::make_shared<ColumnSchemaImpl<TYPE, T>>(attributePtr, name);
-        }
-
-        template <typename TYPE>
-        static std::shared_ptr<PrimaryKey<TYPE, T>> createPrimaryKey(Column<TYPE> T::* attributePtr, const std::string& name)
-        {
-            return std::make_shared<PrimaryKey<TYPE, T>>(attributePtr, name);
-        }
 
         TableSchema(const std::string& name) : m_name(name) {}
 
@@ -135,11 +89,64 @@ class TableSchema
             }
             return nullptr;
         }
+    private:
+        template <typename C>
+        void appendColumn(std::shared_ptr<C> column)
+        {
+            static_assert(std::is_base_of<ColumnSchema<T>, C>::value,
+                           "All table fields must inherit Attribute class");
+            //FIXME: static_assert that column is an Attribute instance
+            if (is_instantiation_of<PrimaryKey, C>::value)
+                m_primaryKey = column;
+            column->setColumnIndex( m_columns.size() );
+            m_columns.push_back(column);
+        }
 
     private:
         std::string m_name;
         ColumnSchemaPtr m_primaryKey;
         std::vector<ColumnSchemaPtr> m_columns;
+
+        friend class Table<T>;
+};
+
+template <typename CLASS>
+class Table
+{
+    private:
+        template <typename C>
+        static void Register(TableSchema<CLASS>& t, C column)
+        {
+            t.appendColumn(column);
+        }
+
+        template <typename C, typename... COLUMNS>
+        static void Register(TableSchema<CLASS>& t, C column, COLUMNS... columns)
+        {
+            t.appendColumn(column);
+            Register(t, columns...);
+        }
+
+    protected:
+        template <typename... COLUMNS>
+        static TableSchema<CLASS> Register(const std::string& name, COLUMNS... columns)
+        {
+            TableSchema<CLASS> t(name);
+            Register(t, columns...);
+            return t;
+        }
+
+        template <typename TYPE>
+        static std::shared_ptr<ColumnSchemaImpl<TYPE, CLASS>> createField(Column<TYPE> CLASS::* attributePtr, const std::string& name)
+        {
+            return std::make_shared<ColumnSchemaImpl<TYPE, CLASS>>(attributePtr, name);
+        }
+
+        template <typename TYPE>
+        static std::shared_ptr<PrimaryKey<TYPE, CLASS>> createPrimaryKey(Column<TYPE> CLASS::* attributePtr, const std::string& name)
+        {
+            return std::make_shared<PrimaryKey<TYPE, CLASS>>(attributePtr, name);
+        }
 };
 
 }

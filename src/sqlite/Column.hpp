@@ -28,6 +28,9 @@
 namespace vsqlite
 {
 
+template <typename T, typename U>
+class ColumnSchemaImpl;
+
 /*
  * CLASS: The class containing the column
  * TYPE: The column type
@@ -75,6 +78,9 @@ class Column
     private:
         TYPE    m_value;
         bool m_isNull = true;
+        ColumnSchemaImpl<CLASS, TYPE>* m_columnSchema;
+
+        friend class ColumnSchemaImpl<CLASS, TYPE>;
 };
 
 template <typename T>
@@ -90,6 +96,7 @@ class ColumnSchema
         virtual const char* typeName() const = 0;
         virtual std::string insert(const T& record) const = 0;
         virtual void load(sqlite3_stmt* stmt, T& record) const = 0;
+        virtual void setSchema( T* inst ) = 0;
         void setColumnIndex( int index ) { m_columnIndex = index; }
 
         template <typename V>
@@ -152,6 +159,11 @@ class ColumnSchemaImpl : public ColumnSchema<CLASS>
             using LoadedType = typename std::conditional<std::is_same<TYPE, std::string>::value, char*, TYPE>::type;
             LoadedType value = (LoadedType)Traits<TYPE>::Load( stmt, ColumnSchema<CLASS>::m_columnIndex );
             record.*m_fieldPtr = value;
+        }
+
+        virtual void setSchema( CLASS *inst )
+        {
+            (inst->*m_fieldPtr).m_columnSchema = this;
         }
 
     private:

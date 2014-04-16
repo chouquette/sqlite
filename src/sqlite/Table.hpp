@@ -92,6 +92,15 @@ template <typename CLASS>
 class Table
 {
     public:
+        Table()
+        {
+            const auto& columns = CLASS::table().columns();
+            for ( auto& column : columns )
+            {
+                column->setSchema( static_cast<CLASS*>( this ) );
+            }
+        }
+
         Operation<bool> insert()
         {
             return Table::insert<1>( { static_cast<CLASS&>( *this ) } );

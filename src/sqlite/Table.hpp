@@ -145,15 +145,15 @@ class Table
         }
 
         template <typename TYPE>
-        static std::shared_ptr<ColumnSchemaImpl<TYPE, CLASS>> createField(Column<CLASS, TYPE> CLASS::* attributePtr, const std::string& name)
+        static std::shared_ptr<ColumnSchemaImpl<CLASS, TYPE>> createField(Column<CLASS, TYPE> CLASS::* attributePtr, const std::string& name)
         {
-            return std::make_shared<ColumnSchemaImpl<TYPE, CLASS>>(attributePtr, name);
+            return std::make_shared<ColumnSchemaImpl<CLASS, TYPE>>(attributePtr, name);
         }
 
         template <typename TYPE>
-        static std::shared_ptr<PrimaryKey<TYPE, CLASS>> createPrimaryKey(Column<CLASS, TYPE> CLASS::* attributePtr, const std::string& name)
+        static std::shared_ptr<PrimaryKey<CLASS, TYPE>> createPrimaryKey(Column<CLASS, TYPE> CLASS::* attributePtr, const std::string& name)
         {
-            return std::make_shared<PrimaryKey<TYPE, CLASS>>(attributePtr, name);
+            return std::make_shared<PrimaryKey<CLASS, TYPE>>(attributePtr, name);
         }
 };
 

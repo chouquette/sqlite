@@ -121,7 +121,7 @@ class ColumnSchema
         int m_columnIndex;
 };
 
-template <typename TYPE, typename CLASS>
+template <typename CLASS, typename TYPE>
 class ColumnSchemaImpl : public ColumnSchema<CLASS>
 {
     public:
@@ -159,12 +159,12 @@ class ColumnSchemaImpl : public ColumnSchema<CLASS>
 };
 
 
-template <typename TYPE, typename CLASS>
-class PrimaryKey : public ColumnSchemaImpl<TYPE, CLASS>
+template <typename CLASS, typename TYPE>
+class PrimaryKey : public ColumnSchemaImpl<CLASS, TYPE>
 {
     public:
         PrimaryKey(Column<CLASS, TYPE> CLASS::* fieldPtr, const std::string& name)
-            : ColumnSchemaImpl<TYPE, CLASS>( fieldPtr, name )
+            : ColumnSchemaImpl<CLASS, TYPE>( fieldPtr, name )
         {
         }
 };

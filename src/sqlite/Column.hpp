@@ -28,8 +28,11 @@
 namespace vsqlite
 {
 
-
-template <typename T>
+/*
+ * CLASS: The class containing the column
+ * TYPE: The column type
+ */
+template <typename CLASS, typename TYPE>
 class Column
 {
     public:
@@ -38,39 +41,39 @@ class Column
             return m_isNull;
         }
 
-        T& operator=( const T& value )
+        TYPE& operator=( const TYPE& value )
         {
             m_value = value;
             m_isNull = false;
             return m_value;
         }
 
-        T& operator=( T&& value )
+        TYPE& operator=( TYPE&& value )
         {
             m_value = std::move( value );
             m_isNull = false;
             return m_value;
         }
 
-        bool operator==( const T& rvalue ) const
+        bool operator==( const TYPE& rvalue ) const
         {
             return m_value == rvalue;
         }
 
-        operator T&()
+        operator TYPE&()
         {
             assert( isNull() == false );
             return m_value;
         }
 
-        operator const T&() const
+        operator const TYPE&() const
         {
             assert( isNull() == false );
             return m_value;
         }
 
     private:
-        T    m_value;
+        TYPE    m_value;
         bool m_isNull = true;
 };
 
@@ -122,7 +125,7 @@ template <typename TYPE, typename CLASS>
 class ColumnSchemaImpl : public ColumnSchema<CLASS>
 {
     public:
-        ColumnSchemaImpl(Column<TYPE> CLASS::* fieldPtr, const std::string& name)
+        ColumnSchemaImpl(Column<CLASS, TYPE> CLASS::* fieldPtr, const std::string& name)
             : ColumnSchema<CLASS>(name)
             , m_fieldPtr( fieldPtr )
         {
@@ -152,7 +155,7 @@ class ColumnSchemaImpl : public ColumnSchema<CLASS>
         }
 
     private:
-        Column<TYPE> CLASS::* m_fieldPtr;
+        Column<CLASS, TYPE> CLASS::* m_fieldPtr;
 };
 
 
@@ -160,7 +163,7 @@ template <typename TYPE, typename CLASS>
 class PrimaryKey : public ColumnSchemaImpl<TYPE, CLASS>
 {
     public:
-        PrimaryKey(Column<TYPE> CLASS::* fieldPtr, const std::string& name)
+        PrimaryKey(Column<CLASS, TYPE> CLASS::* fieldPtr, const std::string& name)
             : ColumnSchemaImpl<TYPE, CLASS>( fieldPtr, name )
         {
         }

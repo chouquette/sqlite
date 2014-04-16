@@ -131,6 +131,11 @@ class Table
         }
 
     protected:
+        // Ease up the declaration of columns and hide the fact that Columns are
+        // also using the containing class as a template parameter.
+        template <typename T>
+        using ColumnAttribute = Column<CLASS, T>;
+
         template <typename... COLUMNS>
         static TableSchema<CLASS> Register(const std::string& name, COLUMNS... columns)
         {
@@ -140,13 +145,13 @@ class Table
         }
 
         template <typename TYPE>
-        static std::shared_ptr<ColumnSchemaImpl<TYPE, CLASS>> createField(Column<TYPE> CLASS::* attributePtr, const std::string& name)
+        static std::shared_ptr<ColumnSchemaImpl<TYPE, CLASS>> createField(Column<CLASS, TYPE> CLASS::* attributePtr, const std::string& name)
         {
             return std::make_shared<ColumnSchemaImpl<TYPE, CLASS>>(attributePtr, name);
         }
 
         template <typename TYPE>
-        static std::shared_ptr<PrimaryKey<TYPE, CLASS>> createPrimaryKey(Column<TYPE> CLASS::* attributePtr, const std::string& name)
+        static std::shared_ptr<PrimaryKey<TYPE, CLASS>> createPrimaryKey(Column<CLASS, TYPE> CLASS::* attributePtr, const std::string& name)
         {
             return std::make_shared<PrimaryKey<TYPE, CLASS>>(attributePtr, name);
         }

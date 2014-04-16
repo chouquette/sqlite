@@ -39,9 +39,9 @@ class TestTable : public vsqlite::Table<TestTable>
         }
 
     public:
-        vsqlite::Column<int> primaryKey;
-        vsqlite::Column<std::string> someText;
-        vsqlite::Column<std::string> moreText;
+        ColumnAttribute<int> primaryKey;
+        ColumnAttribute<std::string> someText;
+        ColumnAttribute<std::string> moreText;
 };
 
 static vsqlite::DBConnection* conn;

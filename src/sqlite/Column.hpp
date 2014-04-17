@@ -93,7 +93,7 @@ class ColumnSchema
         }
 
         const std::string& name() const { return m_name; }
-        virtual const char* typeName() const = 0;
+        virtual std::string typeName() const = 0;
         virtual std::string insert(const T& record) const = 0;
         virtual void load(sqlite3_stmt* stmt, T& record) const = 0;
         virtual void setSchema( T* inst ) = 0;
@@ -138,7 +138,7 @@ class ColumnSchemaImpl : public ColumnSchema<CLASS>
         {
         }
 
-        virtual const char* typeName() const
+        virtual std::string typeName() const
         {
             return Traits<TYPE>::name;
         }
@@ -178,6 +178,11 @@ class PrimaryKey : public ColumnSchemaImpl<CLASS, TYPE>
         PrimaryKey(Column<CLASS, TYPE> CLASS::* fieldPtr, const std::string& name)
             : ColumnSchemaImpl<CLASS, TYPE>( fieldPtr, name )
         {
+        }
+
+        virtual std::string typeName() const
+        {
+            return ColumnSchemaImpl<CLASS, TYPE>::typeName() + " PRIMARY KEY";
         }
 };
 

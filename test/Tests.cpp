@@ -75,7 +75,7 @@ TEST_F (Sqlite, Create)
         // Type
         const unsigned char* psz_type = sqlite3_column_text( outHandle, 2 );
         std::string type( (const char*)psz_type );
-        ASSERT_NE( type.find( attribute->typeName() ), std::string::npos );
+        ASSERT_NE( attribute->typeName().find( type ), std::string::npos );
 
     }
     ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_DONE );

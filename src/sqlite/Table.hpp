@@ -138,15 +138,15 @@ class Table
 
     private:
         template <typename C>
-        static void Register(TableSchema<CLASS>& t, C column)
+        static void Register(TableSchema<CLASS>* t, C column)
         {
-            t.appendColumn(column);
+            t->appendColumn(column);
         }
 
         template <typename C, typename... COLUMNS>
-        static void Register(TableSchema<CLASS>& t, C column, COLUMNS... columns)
+        static void Register(TableSchema<CLASS>* t, C column, COLUMNS... columns)
         {
-            t.appendColumn(column);
+            t->appendColumn(column);
             Register(t, columns...);
         }
 
@@ -157,9 +157,9 @@ class Table
         using ColumnAttribute = Column<CLASS, T>;
 
         template <typename... COLUMNS>
-        static TableSchema<CLASS> Register(const std::string& name, COLUMNS... columns)
+        static TableSchema<CLASS>* Register(const std::string& name, COLUMNS... columns)
         {
-            TableSchema<CLASS> t(name);
+            auto t = new TableSchema<CLASS>( name );
             Register(t, columns...);
             return t;
         }

@@ -31,11 +31,11 @@ class TestTable : public vsqlite::Table<TestTable>
     public:
         static vsqlite::TableSchema<TestTable>& table()
         {
-            static auto table = Register("TestTable",
+            static auto* table = Register("TestTable",
                                            createPrimaryKey(&TestTable::id, "id"),
                                            createField(&TestTable::someText, "text"),
                                            createField(&TestTable::moreText, "otherField") );
-            return table;
+            return *table;
         }
 
     public:

@@ -109,7 +109,7 @@ class DBConnection
             while ( sqlite3_step( statement ) != SQLITE_DONE )
             {
                 T row;
-                auto& attributes = T::table().columns();
+                const auto& attributes = T::schema->columns();
                 for ( auto a : attributes )
                 {
                     a->load( statement, row );

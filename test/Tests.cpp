@@ -29,20 +29,18 @@
 class TestTable : public vsqlite::Table<TestTable>
 {
     public:
-        static vsqlite::TableSchema<TestTable>& table()
-        {
-            static auto* table = Register("TestTable",
-                                           createPrimaryKey(&TestTable::id, "id"),
-                                           createField(&TestTable::someText, "text"),
-                                           createField(&TestTable::moreText, "otherField") );
-            return *table;
-        }
+        static const vsqlite::TableSchema<TestTable>* schema;
 
     public:
         ColumnAttribute<int> id;
         ColumnAttribute<std::string> someText;
         ColumnAttribute<std::string> moreText;
 };
+
+const auto* TestTable::schema = TestTable::Register("TestTable",
+                                          createPrimaryKey(&TestTable::id, "id"),
+                                          createField(&TestTable::someText, "text"),
+                                          createField(&TestTable::moreText, "otherField") );
 
 static vsqlite::DBConnection* conn;
 
@@ -58,16 +56,17 @@ class Sqlite : public testing::Test
     }
 };
 
-TEST_F (Sqlite, Create)
+TEST_F( Sqlite, Create )
 {
-    ASSERT_TRUE( conn->execute( TestTable::table().create() ) );
     const char* checkTableRequest = "pragma table_info(TestTable)";
     sqlite3_stmt* outHandle;
     sqlite3_prepare_v2(conn->rawConnection(), checkTableRequest, -1, &outHandle, NULL);
-    for (int i = 0; i < TestTable::table().columns().size(); ++i)
+    const auto& columns = TestTable::schema->columns();
+    for (int i = 0; i < columns.size(); ++i)
     {
-        auto attribute = TestTable::table().columns()[i];
-        ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_ROW );
+        auto attribute = columns[i];
+        int res = sqlite3_step( outHandle );
+        ASSERT_EQ( SQLITE_ROW, res );
         // Name
         const unsigned char* columnName = sqlite3_column_text( outHandle, 1 );
         ASSERT_TRUE( attribute->name() == (const char*)columnName );
@@ -167,7 +166,7 @@ TEST_F( Sqlite, LoadByColumnValue )
         t.moreText = std::string("test") + (char)(i + '0');
     }
     conn->execute( TestTable::insert( ts ) );
-    auto attribute = TestTable::table().column( "otherField" );
+    auto attribute = TestTable::schema->column( "otherField" );
     ASSERT_TRUE( (bool)attribute );
     auto res = conn->execute( TestTable::fetch().where( *attribute == "test5" ) );
     ASSERT_EQ( 1, res.size() );

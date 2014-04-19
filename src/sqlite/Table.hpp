@@ -98,7 +98,7 @@ class Table
     public:
         Table()
         {
-            const auto& columns = CLASS::table().columns();
+            const auto& columns = CLASS::schema->columns();
             for ( auto& column : columns )
             {
                 column->setSchema( static_cast<CLASS*>( this ) );
@@ -113,12 +113,12 @@ class Table
         template <size_t N>
         static Operation<bool> insert( const CLASS(&records)[N] )
         {
-            std::string insertInto = "INSERT INTO " + CLASS::table().name() + " VALUES";
+            std::string insertInto = "INSERT INTO " + CLASS::schema->name() + " VALUES";
 
             for ( auto& r : records )
             {
                 insertInto += '(';
-                auto columns = CLASS::table().columns();
+                const auto& columns = CLASS::schema->columns();
                 for ( auto attr : columns )
                 {
                     insertInto += attr->insert( r ) + ',';
@@ -131,12 +131,12 @@ class Table
 
         static Operation<CLASS> fetch()
         {
-            return Operation<CLASS>( "SELECT * FROM " + CLASS::table().name() );
+            return Operation<CLASS>( "SELECT * FROM " + CLASS::schema->name() );
         }
 
         static const ColumnSchema<CLASS> primaryKey()
         {
-            return CLASS::table().primaryKey();
+            return CLASS::schema->primaryKey();
         }
 
     private:
@@ -160,7 +160,7 @@ class Table
         using ColumnAttribute = Column<CLASS, T>;
 
         template <typename... COLUMNS>
-        static TableSchema<CLASS>* Register(const std::string& name, COLUMNS... columns)
+        static const TableSchema<CLASS>* Register(const std::string& name, COLUMNS... columns)
         {
             auto t = new TableSchema<CLASS>( name );
             Register(t, columns...);

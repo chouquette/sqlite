@@ -164,6 +164,7 @@ class Table
         {
             auto t = new TableSchema<CLASS>( name );
             Register(t, columns...);
+            DBConnection::registerTableSchema( t );
             return t;
         }
 

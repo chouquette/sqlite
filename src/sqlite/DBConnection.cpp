@@ -1,5 +1,5 @@
 /*****************************************************************************
- * DBConnection.hpp: Wraps the DB connection
+ * DBConnection.cpp: Wraps the DB connection
  *****************************************************************************
  * Copyright (C) 2008-2014 VideoLAN
  *
@@ -25,4 +25,10 @@
 using namespace vsqlite;
 
 DBConnection DBConnection::s_instance;
+std::vector<ITableSchema*> DBConnection::s_tables;
 
+void
+DBConnection::registerTableSchema( ITableSchema* schema )
+{
+    s_tables.push_back( schema );
+}

@@ -33,6 +33,8 @@
 namespace vsqlite
 {
 
+class ITableSchema;
+
 class DBConnection
 {
     public:
@@ -87,6 +89,8 @@ class DBConnection
             // The operation & the associated sqlite3_stmt now falls out of scope and is cleaned
         }
 
+        static void registerTableSchema( ITableSchema* schema );
+
     private:
         DBConnection()
             : m_isValid( false )
@@ -120,6 +124,7 @@ class DBConnection
         sqlite3*    m_db;
         bool        m_isValid;
         static DBConnection s_instance;
+        static std::vector<ITableSchema*> s_tables;
 };
 
 }

@@ -30,8 +30,14 @@ namespace vsqlite
 
 template <typename T> class Table;
 
+class ITableSchema
+{
+    public:
+        virtual Operation<bool> create() = 0;
+};
+
 template <typename T>
-class TableSchema
+class TableSchema : ITableSchema
 {
     public:
         typedef std::shared_ptr<ColumnSchema<T>> ColumnSchemaPtr;
@@ -39,7 +45,7 @@ class TableSchema
 
         TableSchema(const std::string& name) : m_name(name) {}
 
-        Operation<bool> create()
+        virtual Operation<bool> create()
         {
             std::string query = "CREATE TABLE IF NOT EXISTS " + m_name + '(';
             for (auto c : m_columns)

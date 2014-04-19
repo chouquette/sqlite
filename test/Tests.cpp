@@ -32,14 +32,14 @@ class TestTable : public vsqlite::Table<TestTable>
         static vsqlite::TableSchema<TestTable>& table()
         {
             static auto table = Register("TestTable",
-                                           createPrimaryKey(&TestTable::primaryKey, "id"),
+                                           createPrimaryKey(&TestTable::id, "id"),
                                            createField(&TestTable::someText, "text"),
                                            createField(&TestTable::moreText, "otherField") );
             return table;
         }
 
     public:
-        ColumnAttribute<int> primaryKey;
+        ColumnAttribute<int> id;
         ColumnAttribute<std::string> someText;
         ColumnAttribute<std::string> moreText;
 };
@@ -79,7 +79,7 @@ TEST_F (Sqlite, Create)
 
     }
     ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_DONE );
-    ASSERT_EQ( TestTable::table().primaryKey().name(), "id" );
+    ASSERT_EQ( TestTable::primaryKey().name(), "id" );
     sqlite3_finalize( outHandle );
 }
 
@@ -87,7 +87,7 @@ TEST_F( Sqlite, InsertOne )
 {
     ASSERT_TRUE( conn->execute( TestTable::table().create() ) );
     TestTable t;
-    t.primaryKey = 1;
+    t.id = 1;
     t.someText = "sea";
     t.moreText = "otter";
     ASSERT_TRUE( conn->execute( t.insert() ) );
@@ -96,7 +96,7 @@ TEST_F( Sqlite, InsertOne )
     sqlite3_prepare_v2(conn->rawConnection(), listEntries, -1, &outHandle, NULL);
     ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_ROW );
     int primaryKey = sqlite3_column_int( outHandle, 0 );
-    ASSERT_TRUE( t.primaryKey == primaryKey );
+    ASSERT_TRUE( t.id == primaryKey );
     const unsigned char* someText = sqlite3_column_text( outHandle, 1 );
     ASSERT_EQ( t.someText, (const char*)someText );
     const unsigned char* moreText = sqlite3_column_text( outHandle, 2 );
@@ -111,7 +111,7 @@ TEST_F( Sqlite, LoadAll )
     for (int i = 0; i < 10; ++i)
     {
         TestTable& t = ts[i];
-        t.primaryKey = i;
+        t.id = i;
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
     }
@@ -123,7 +123,7 @@ TEST_F( Sqlite, LoadAll )
     {
         const TestTable& t = ts[i];
         const TestTable& t2 = t2s[i];
-        ASSERT_EQ( t.primaryKey, t2.primaryKey );
+        ASSERT_EQ( t.id, t2.id );
         ASSERT_EQ( t.someText, t2.someText );
         ASSERT_EQ( t.moreText, t2.moreText);
     }
@@ -136,7 +136,7 @@ TEST_F( Sqlite, LoadByPrimaryKey )
     for (int i = 0; i < 10; ++i)
     {
         TestTable& t = ts[i];
-        t.primaryKey = i;
+        t.id = i;
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
     }
@@ -144,12 +144,12 @@ TEST_F( Sqlite, LoadByPrimaryKey )
     for ( int i = 0; i < 10; ++i )
     {
         std::vector<TestTable> t2s = conn->execute( TestTable::fetch().where
-                                                    ( TestTable::table().primaryKey() == i ) );
+                                                    ( TestTable::primaryKey() == i ) );
 
         ASSERT_EQ(1, t2s.size());
         TestTable& t2 = t2s[0];
         TestTable& t = ts[i];
-        ASSERT_EQ( t.primaryKey, t2.primaryKey );
+        ASSERT_EQ( t.id, t2.id );
         ASSERT_EQ( t.someText, t2.someText );
         ASSERT_EQ( t.moreText, t2.moreText);
     }
@@ -163,7 +163,7 @@ TEST_F( Sqlite, LoadByColumnValue )
     for (int i = 0; i < 10; ++i)
     {
         TestTable& t = ts[i];
-        t.primaryKey = i;
+        t.id = i;
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
     }
@@ -173,7 +173,7 @@ TEST_F( Sqlite, LoadByColumnValue )
     auto res = conn->execute( TestTable::fetch().where( *attribute == "test5" ) );
     ASSERT_EQ( 1, res.size() );
     TestTable t = res[0];
-    ASSERT_EQ( 5, t.primaryKey );
+    ASSERT_EQ( 5, t.id );
     ASSERT_EQ( t.someText, "load5" );
 }
 

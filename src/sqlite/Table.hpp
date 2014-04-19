@@ -125,6 +125,11 @@ class Table
             return Operation<CLASS>( "SELECT * FROM " + CLASS::table().name() );
         }
 
+        static const ColumnSchema<CLASS> primaryKey()
+        {
+            return CLASS::table().primaryKey();
+        }
+
     private:
         template <typename C>
         static void Register(TableSchema<CLASS>& t, C column)

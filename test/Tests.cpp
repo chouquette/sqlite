@@ -116,7 +116,7 @@ TEST_F( Sqlite, LoadAll )
         t.moreText = std::string("test") + (char)(i + '0');
     }
     ASSERT_TRUE( conn->execute( TestTable::insert( ts ) ) );
-    std::vector<TestTable> t2s = conn->execute( TestTable::table().fetch() );
+    std::vector<TestTable> t2s = conn->execute( TestTable::fetch() );
 
     ASSERT_EQ(t2s.size(), 10);
     for (int i = 0; i < 10; ++i)
@@ -143,7 +143,7 @@ TEST_F( Sqlite, LoadByPrimaryKey )
     conn->execute( TestTable::insert( ts ) );
     for ( int i = 0; i < 10; ++i )
     {
-        std::vector<TestTable> t2s = conn->execute( TestTable::table().fetch().where
+        std::vector<TestTable> t2s = conn->execute( TestTable::fetch().where
                                                     ( TestTable::table().primaryKey() == i ) );
 
         ASSERT_EQ(1, t2s.size());
@@ -170,7 +170,7 @@ TEST_F( Sqlite, LoadByColumnValue )
     conn->execute( TestTable::insert( ts ) );
     auto attribute = TestTable::table().column( "otherField" );
     ASSERT_TRUE( (bool)attribute );
-    auto res = conn->execute( TestTable::table().fetch().where( *attribute == "test5" ) );
+    auto res = conn->execute( TestTable::fetch().where( *attribute == "test5" ) );
     ASSERT_EQ( 1, res.size() );
     TestTable t = res[0];
     ASSERT_EQ( 5, t.primaryKey );

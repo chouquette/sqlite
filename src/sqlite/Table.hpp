@@ -52,11 +52,6 @@ class TableSchema
         const Columns& columns() const { return m_columns; }
         const ColumnSchema<T>& primaryKey() const { return *m_primaryKey; }
 
-        Operation<T> fetch()
-        {
-            return Operation<T>( "SELECT * FROM " + m_name );
-        }
-
         const ColumnSchemaPtr column( const std::string& name )
         {
             for ( auto a : m_columns )
@@ -123,6 +118,11 @@ class Table
             }
             insertInto.replace(insertInto.end() - 1, insertInto.end(), ";");
             return Operation<bool>( insertInto );
+        }
+
+        static Operation<CLASS> fetch()
+        {
+            return Operation<CLASS>( "SELECT * FROM " + CLASS::table().name() );
         }
 
     private:

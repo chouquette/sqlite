@@ -69,7 +69,7 @@ class TableSchema
             static_assert(std::is_base_of<ColumnSchema<T>, C>::value,
                            "All table fields must inherit Attribute class");
             //FIXME: static_assert that column is an Attribute instance
-            if (is_instantiation_of<PrimaryKey, C>::value)
+            if (is_instantiation_of<PrimaryKeySchema, C>::value)
                 m_primaryKey = column;
             column->setColumnIndex( m_columns.size() );
             m_columns.push_back(column);
@@ -165,9 +165,9 @@ class Table
         }
 
         template <typename TYPE>
-        static std::shared_ptr<PrimaryKey<CLASS, TYPE>> createPrimaryKey(Column<CLASS, TYPE> CLASS::* attributePtr, const std::string& name)
+        static std::shared_ptr<PrimaryKeySchema<CLASS, TYPE>> createPrimaryKey(Column<CLASS, TYPE> CLASS::* attributePtr, const std::string& name)
         {
-            return std::make_shared<PrimaryKey<CLASS, TYPE>>(attributePtr, name);
+            return std::make_shared<PrimaryKeySchema<CLASS, TYPE>>(attributePtr, name);
         }
 };
 

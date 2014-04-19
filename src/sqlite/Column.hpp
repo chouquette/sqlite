@@ -172,10 +172,10 @@ class ColumnSchemaImpl : public ColumnSchema<CLASS>
 
 
 template <typename CLASS, typename TYPE>
-class PrimaryKey : public ColumnSchemaImpl<CLASS, TYPE>
+class PrimaryKeySchema : public ColumnSchemaImpl<CLASS, TYPE>
 {
     public:
-        PrimaryKey(Column<CLASS, TYPE> CLASS::* fieldPtr, const std::string& name)
+        PrimaryKeySchema(Column<CLASS, TYPE> CLASS::* fieldPtr, const std::string& name)
             : ColumnSchemaImpl<CLASS, TYPE>( fieldPtr, name )
         {
         }

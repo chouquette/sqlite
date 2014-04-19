@@ -22,6 +22,8 @@
 
 #include "DBConnection.hpp"
 
+#include "Table.hpp"
+
 using namespace vsqlite;
 
 DBConnection DBConnection::s_instance;
@@ -30,5 +32,15 @@ std::vector<ITableSchema*> DBConnection::s_tables;
 void
 DBConnection::registerTableSchema( ITableSchema* schema )
 {
+
     s_tables.push_back( schema );
+}
+
+void
+DBConnection::createTables()
+{
+    for ( auto t : s_tables )
+    {
+        execute( t->create() );
+    }
 }

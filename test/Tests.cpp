@@ -49,6 +49,7 @@ class Sqlite : public testing::Test
     virtual void SetUp()
     {
         conn = vsqlite::DBConnection::init("test.db");
+        ASSERT_TRUE( conn->isValid() );
     }
     virtual void TearDown()
     {
@@ -83,7 +84,6 @@ TEST_F( Sqlite, Create )
 
 TEST_F( Sqlite, InsertOne )
 {
-    ASSERT_TRUE( conn->execute( TestTable::table().create() ) );
     TestTable t;
     t.id = 1;
     t.someText = "sea";
@@ -104,7 +104,6 @@ TEST_F( Sqlite, InsertOne )
 
 TEST_F( Sqlite, LoadAll )
 {
-    ASSERT_TRUE( conn->execute( TestTable::table().create() ) );
     TestTable ts[10];
     for (int i = 0; i < 10; ++i)
     {
@@ -129,7 +128,6 @@ TEST_F( Sqlite, LoadAll )
 
 TEST_F( Sqlite, LoadByPrimaryKey )
 {
-    conn->execute( TestTable::table().create() );
     TestTable ts[10];
     for (int i = 0; i < 10; ++i)
     {
@@ -156,7 +154,6 @@ TEST_F( Sqlite, LoadByPrimaryKey )
 
 TEST_F( Sqlite, LoadByColumnValue )
 {
-    conn->execute( TestTable::table().create() );
     TestTable ts[10];
     for (int i = 0; i < 10; ++i)
     {

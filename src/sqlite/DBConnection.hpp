@@ -42,6 +42,10 @@ class DBConnection
         {
             int res = sqlite3_open( dbPath.c_str(), &s_instance.m_db );
             s_instance.m_isValid = ( res == SQLITE_OK );
+            if ( s_instance.m_isValid )
+            {
+                s_instance.createTables();
+            }
             return &s_instance;
         }
 
@@ -84,7 +88,9 @@ class DBConnection
             // We still need to step on the request for it to be executed.
             int res = sqlite3_step( op );
             while ( res != SQLITE_DONE && res != SQLITE_ERROR )
+            {
                 res = sqlite3_step( op );
+            }
             return res != SQLITE_ERROR;
             // The operation & the associated sqlite3_stmt now falls out of scope and is cleaned
         }
@@ -119,6 +125,8 @@ class DBConnection
             }
             return results;
         }
+
+        void createTables();
 
     private:
         sqlite3*    m_db;

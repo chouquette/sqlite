@@ -23,7 +23,12 @@
 #ifndef DBCONNECTION_HPP
 #define DBCONNECTION_HPP
 
-#include "sqlite.hpp"
+#include <iostream>
+#include <sqlite3.h>
+#include <string>
+#include <vector>
+
+#include "Operation.hpp"
 
 namespace vsqlite
 {

@@ -24,7 +24,8 @@
 #define OPERATION_HPP
 
 #include <cassert>
-#include "sqlite.hpp"
+
+#include "WhereClause.hpp"
 
 namespace vsqlite
 {

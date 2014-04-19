@@ -23,8 +23,8 @@
 #ifndef WHERECLAUSE_HPP
 #define WHERECLAUSE_HPP
 
+#include <functional>
 #include <iostream>
-#include "sqlite.hpp"
 
 namespace vsqlite
 {

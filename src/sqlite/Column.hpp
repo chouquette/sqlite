@@ -24,8 +24,9 @@
 #define COLUMN_HPP
 
 #include <cstring>
+#include <sstream>
 
-#include "sqlite.hpp"
+#include "Tools.hpp"
 
 namespace vsqlite
 {

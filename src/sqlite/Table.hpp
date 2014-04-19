@@ -23,7 +23,10 @@
 #ifndef TABLE_HPP
 #define TABLE_HPP
 
-#include "sqlite.hpp"
+#include <memory>
+
+#include "Column.hpp"
+#include "DBConnection.hpp"
 
 namespace vsqlite
 {

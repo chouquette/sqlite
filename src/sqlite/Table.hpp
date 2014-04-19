@@ -36,7 +36,7 @@ template <typename T> class Table;
 class ITableSchema
 {
     public:
-        virtual Operation<bool> create() = 0;
+        virtual Operation<bool> create() const = 0;
 };
 
 template <typename T>
@@ -48,7 +48,7 @@ class TableSchema : ITableSchema
 
         TableSchema(const std::string& name) : m_name(name) {}
 
-        virtual Operation<bool> create()
+        virtual Operation<bool> create() const
         {
             std::string query = "CREATE TABLE IF NOT EXISTS " + m_name + '(';
             for (auto c : m_columns)
@@ -61,7 +61,7 @@ class TableSchema : ITableSchema
         const Columns& columns() const { return m_columns; }
         const ColumnSchema<T>& primaryKey() const { return *m_primaryKey; }
 
-        const ColumnSchemaPtr column( const std::string& name )
+        const ColumnSchemaPtr column( const std::string& name ) const
         {
             for ( auto a : m_columns )
             {

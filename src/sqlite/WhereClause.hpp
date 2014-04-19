@@ -23,6 +23,7 @@
 #ifndef WHERECLAUSE_HPP
 #define WHERECLAUSE_HPP
 
+#include <iostream>
 #include "sqlite.hpp"
 
 namespace vsqlite

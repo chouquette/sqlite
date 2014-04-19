@@ -23,6 +23,8 @@
 #ifndef COLUMN_HPP
 #define COLUMN_HPP
 
+#include <cstring>
+
 #include "sqlite.hpp"
 
 namespace vsqlite

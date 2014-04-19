@@ -31,15 +31,11 @@ namespace vsqlite
 class DBConnection
 {
     public:
-        DBConnection(const std::string& dbPath)
+        static DBConnection* init(const std::string& dbPath)
         {
-            int res = sqlite3_open( dbPath.c_str(), &m_db );
-            m_isValid = ( res == SQLITE_OK );
-        }
-
-        ~DBConnection()
-        {
-            sqlite3_close( m_db );
+            int res = sqlite3_open( dbPath.c_str(), &s_instance.m_db );
+            s_instance.m_isValid = ( res == SQLITE_OK );
+            return &s_instance;
         }
 
         bool isValid() const { return m_isValid; }
@@ -87,6 +83,16 @@ class DBConnection
         }
 
     private:
+        DBConnection()
+            : m_isValid( false )
+        {
+        }
+
+        ~DBConnection()
+        {
+            sqlite3_close( m_db );
+        }
+
         template <typename T>
         std::vector<T> parseResults( sqlite3_stmt* statement )
         {
@@ -108,6 +114,7 @@ class DBConnection
     private:
         sqlite3*    m_db;
         bool        m_isValid;
+        static DBConnection s_instance;
 };
 
 }

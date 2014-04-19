@@ -23,6 +23,7 @@
 #ifndef OPERATION_HPP
 #define OPERATION_HPP
 
+#include <cassert>
 #include "sqlite.hpp"
 
 namespace vsqlite

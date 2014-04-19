@@ -50,11 +50,10 @@ class Sqlite : public testing::Test
 {
     virtual void SetUp()
     {
-        conn = new vsqlite::DBConnection("test.db");
+        conn = vsqlite::DBConnection::init("test.db");
     }
     virtual void TearDown()
     {
-        delete conn;
         unlink("test.db");
     }
 };

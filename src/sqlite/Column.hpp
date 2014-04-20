@@ -148,8 +148,11 @@ class ColumnSchemaImpl : public ColumnSchema<CLASS>
 
         virtual std::string insert(const CLASS& record) const
         {
+            const auto& column = (record.*m_fieldPtr);
+            if ( column.isNull() )
+                return "NULL";
             std::ostringstream oss;
-            oss << (TYPE)(record.*m_fieldPtr);
+            oss << (TYPE)column;
             if (Traits<TYPE>::need_escape)
                 return "\"" + oss.str() + "\"";
             return oss.str();

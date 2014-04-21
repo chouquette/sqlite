@@ -59,7 +59,7 @@ class TableSchema : ITableSchema
 
         const std::string& name() const { return m_name; }
         const Columns& columns() const { return m_columns; }
-        const ColumnSchema<T>& primaryKey() const { return *m_primaryKey; }
+        const PrimaryKeySchema<T>& primaryKey() const { return *m_primaryKey; }
 
         const ColumnSchemaPtr column( const std::string& name ) const
         {
@@ -76,17 +76,21 @@ class TableSchema : ITableSchema
         void appendColumn(std::shared_ptr<C> column)
         {
             static_assert(std::is_base_of<ColumnSchema<T>, C>::value,
-                           "All table fields must inherit Attribute class");
+                           "All table fields must inherit Column<> class");
             //FIXME: static_assert that column is an Attribute instance
-            if (is_instantiation_of<PrimaryKeySchema, C>::value)
-                m_primaryKey = column;
             column->setColumnIndex( m_columns.size() );
             m_columns.push_back(column);
         }
 
+        void appendColumn( std::shared_ptr<PrimaryKeySchema<T>> column )
+        {
+            appendColumn( static_cast<ColumnSchemaPtr>( column ) );
+            m_primaryKey = column;
+        }
+
     private:
         std::string m_name;
-        ColumnSchemaPtr m_primaryKey;
+        std::shared_ptr<PrimaryKeySchema<T>> m_primaryKey;
         std::vector<ColumnSchemaPtr> m_columns;
 
         friend class Table<T>;
@@ -123,20 +127,20 @@ class Table
             return Operation<CLASS>( "SELECT * FROM " + CLASS::schema->name() );
         }
 
-        static const ColumnSchema<CLASS> primaryKey()
+        static const PrimaryKeySchema<CLASS> primaryKey()
         {
             return CLASS::schema->primaryKey();
         }
 
     private:
         template <typename C>
-        static void Register(TableSchema<CLASS>* t, C column)
+        static void Register(TableSchema<CLASS>* t, std::shared_ptr<C> column)
         {
             t->appendColumn(column);
         }
 
         template <typename C, typename... COLUMNS>
-        static void Register(TableSchema<CLASS>* t, C column, COLUMNS... columns)
+        static void Register(TableSchema<CLASS>* t, std::shared_ptr<C> column, COLUMNS... columns)
         {
             t->appendColumn(column);
             Register(t, columns...);
@@ -163,10 +167,9 @@ class Table
             return std::make_shared<ColumnSchemaImpl<CLASS, TYPE>>(attributePtr, name);
         }
 
-        template <typename TYPE>
-        static std::shared_ptr<PrimaryKeySchema<CLASS, TYPE>> createPrimaryKey(Column<CLASS, TYPE> CLASS::* attributePtr, const std::string& name)
+        static std::shared_ptr<PrimaryKeySchema<CLASS>> createPrimaryKey(Column<CLASS, int> CLASS::* attributePtr, const std::string& name)
         {
-            return std::make_shared<PrimaryKeySchema<CLASS, TYPE>>(attributePtr, name);
+            return std::make_shared<PrimaryKeySchema<CLASS>>(attributePtr, name);
         }
 };
 

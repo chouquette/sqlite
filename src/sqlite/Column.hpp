@@ -181,18 +181,18 @@ class ColumnSchemaImpl : public ColumnSchema<CLASS>
         Column<CLASS, TYPE> CLASS::* m_fieldPtr;
 };
 
-template <typename CLASS, typename TYPE>
-class PrimaryKeySchema : public ColumnSchemaImpl<CLASS, TYPE>
+template <typename CLASS>
+class PrimaryKeySchema : public ColumnSchemaImpl<CLASS, int>
 {
     public:
-        PrimaryKeySchema(Column<CLASS, TYPE> CLASS::* fieldPtr, const std::string& name)
-            : ColumnSchemaImpl<CLASS, TYPE>( fieldPtr, name )
+        PrimaryKeySchema(Column<CLASS, int> CLASS::* fieldPtr, const std::string& name)
+            : ColumnSchemaImpl<CLASS, int>( fieldPtr, name )
         {
         }
 
         virtual std::string typeName() const
         {
-            return ColumnSchemaImpl<CLASS, TYPE>::typeName() + " PRIMARY KEY";
+            return ColumnSchemaImpl<CLASS, int>::typeName() + " PRIMARY KEY";
         }
 };
 

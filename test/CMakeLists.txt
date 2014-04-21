@@ -26,6 +26,7 @@ link_directories(${binary_dir})
 
 add_definitions("-std=c++11")
 add_definitions("-g")
+add_definitions("-Wall -Wextra")
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 list(APPEND TEST_SRCS

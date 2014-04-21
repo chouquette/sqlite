@@ -63,7 +63,7 @@ TEST_F( Sqlite, Create )
     sqlite3_stmt* outHandle;
     sqlite3_prepare_v2(conn->rawConnection(), checkTableRequest, -1, &outHandle, NULL);
     const auto& columns = TestTable::schema->columns();
-    for (int i = 0; i < columns.size(); ++i)
+    for (size_t i = 0; i < columns.size(); ++i)
     {
         auto attribute = columns[i];
         int res = sqlite3_step( outHandle );
@@ -113,7 +113,7 @@ TEST_F( Sqlite, LoadAll )
     }
     std::vector<TestTable> t2s = conn->execute( TestTable::fetch() );
 
-    ASSERT_EQ(t2s.size(), 10);
+    ASSERT_EQ( 10u, t2s.size() );
     for (int i = 0; i < 10; ++i)
     {
         const TestTable& t = ts[i];
@@ -139,7 +139,7 @@ TEST_F( Sqlite, LoadByPrimaryKey )
         std::vector<TestTable> t2s = conn->execute( TestTable::fetch().where
                                                     ( TestTable::primaryKey() == i ) );
 
-        ASSERT_EQ(1, t2s.size());
+        ASSERT_EQ(1u, t2s.size());
         TestTable& t2 = t2s[0];
         TestTable& t = ts[i];
         ASSERT_EQ( t.id, t2.id );
@@ -162,7 +162,7 @@ TEST_F( Sqlite, LoadByColumnValue )
     auto attribute = TestTable::schema->column( "otherField" );
     ASSERT_TRUE( (bool)attribute );
     auto res = conn->execute( TestTable::fetch().where( *attribute == "test5" ) );
-    ASSERT_EQ( 1, res.size() );
+    ASSERT_EQ( 1u, res.size() );
     TestTable t = res[0];
     ASSERT_EQ( 5, t.id );
     ASSERT_EQ( t.someText, "load5" );

@@ -85,7 +85,6 @@ TEST_F( Sqlite, Create )
 TEST_F( Sqlite, InsertOne )
 {
     TestTable t;
-    t.id = 1;
     t.someText = "sea";
     t.moreText = "otter";
     ASSERT_TRUE( conn->execute( t.insert() ) );
@@ -94,7 +93,7 @@ TEST_F( Sqlite, InsertOne )
     sqlite3_prepare_v2(conn->rawConnection(), listEntries, -1, &outHandle, NULL);
     ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_ROW );
     int primaryKey = sqlite3_column_int( outHandle, 0 );
-    ASSERT_TRUE( t.id == primaryKey );
+    ASSERT_EQ( t.id, primaryKey );
     const unsigned char* someText = sqlite3_column_text( outHandle, 1 );
     ASSERT_EQ( t.someText, (const char*)someText );
     const unsigned char* moreText = sqlite3_column_text( outHandle, 2 );
@@ -108,7 +107,6 @@ TEST_F( Sqlite, LoadAll )
     for (int i = 0; i < 10; ++i)
     {
         TestTable& t = ts[i];
-        t.id = i;
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
         ASSERT_TRUE( conn->execute( t.insert() ) );
@@ -132,7 +130,6 @@ TEST_F( Sqlite, LoadByPrimaryKey )
     for (int i = 0; i < 10; ++i)
     {
         TestTable& t = ts[i];
-        t.id = i;
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
         conn->execute( t.insert() );
@@ -158,7 +155,6 @@ TEST_F( Sqlite, LoadByColumnValue )
     for (int i = 0; i < 10; ++i)
     {
         TestTable& t = ts[i];
-        t.id = i;
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
         conn->execute( t.insert() );

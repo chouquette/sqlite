@@ -75,9 +75,9 @@ TEST_F( Sqlite, Create )
         const unsigned char* psz_type = sqlite3_column_text( outHandle, 2 );
         std::string type( (const char*)psz_type );
         ASSERT_NE( attribute->typeName().find( type ), std::string::npos );
-
     }
-    ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_DONE );
+    int res = sqlite3_step( outHandle );
+    ASSERT_EQ( SQLITE_DONE, res );
     ASSERT_EQ( TestTable::primaryKey().name(), "id" );
     sqlite3_finalize( outHandle );
 }
@@ -111,8 +111,8 @@ TEST_F( Sqlite, LoadAll )
         t.id = i;
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
+        ASSERT_TRUE( conn->execute( t.insert() ) );
     }
-    ASSERT_TRUE( conn->execute( TestTable::insert( ts ) ) );
     std::vector<TestTable> t2s = conn->execute( TestTable::fetch() );
 
     ASSERT_EQ(t2s.size(), 10);
@@ -135,8 +135,8 @@ TEST_F( Sqlite, LoadByPrimaryKey )
         t.id = i;
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
+        conn->execute( t.insert() );
     }
-    conn->execute( TestTable::insert( ts ) );
     for ( int i = 0; i < 10; ++i )
     {
         std::vector<TestTable> t2s = conn->execute( TestTable::fetch().where
@@ -161,8 +161,8 @@ TEST_F( Sqlite, LoadByColumnValue )
         t.id = i;
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
+        conn->execute( t.insert() );
     }
-    conn->execute( TestTable::insert( ts ) );
     auto attribute = TestTable::schema->column( "otherField" );
     ASSERT_TRUE( (bool)attribute );
     auto res = conn->execute( TestTable::fetch().where( *attribute == "test5" ) );

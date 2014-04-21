@@ -107,25 +107,14 @@ class Table
 
         Operation<bool> insert()
         {
-            return Table::insert<1>( { static_cast<CLASS&>( *this ) } );
-        }
-
-        template <size_t N>
-        static Operation<bool> insert( const CLASS(&records)[N] )
-        {
-            std::string insertInto = "INSERT INTO " + CLASS::schema->name() + " VALUES";
-
-            for ( auto& r : records )
+            std::string insertInto = "INSERT INTO " + CLASS::schema->name() + " VALUES(";
+            const auto& record = static_cast<CLASS&>( *this );
+            const auto& columns = CLASS::schema->columns();
+            for ( auto attr : columns )
             {
-                insertInto += '(';
-                const auto& columns = CLASS::schema->columns();
-                for ( auto attr : columns )
-                {
-                    insertInto += attr->insert( r ) + ',';
-                }
-                insertInto.replace(insertInto.end() - 1, insertInto.end(), "),");
+                insertInto += attr->insert( record ) + ',';
             }
-            insertInto.replace(insertInto.end() - 1, insertInto.end(), ";");
+            insertInto.replace(insertInto.end() - 1, insertInto.end(), ");");
             return Operation<bool>( insertInto );
         }
 

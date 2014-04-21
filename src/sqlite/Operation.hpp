@@ -24,6 +24,7 @@
 #define OPERATION_HPP
 
 #include <cassert>
+#include <sqlite3.h>
 
 #include "WhereClause.hpp"
 
@@ -39,6 +40,12 @@ class Operation
             , m_statement( NULL )
         {
         }
+
+        Operation()
+            : m_statement( NULL )
+        {
+        }
+
         virtual ~Operation()
         {
             sqlite3_finalize( m_statement );
@@ -54,7 +61,7 @@ class Operation
         Operation( const Operation& op ) = delete;
         Operation( Operation&& op ) = default;
 
-        bool execute( sqlite3* db )
+        virtual bool execute( sqlite3* db )
         {
             m_request += m_whereClause.generate();
             int resultCode = sqlite3_prepare_v2( db, m_request.c_str(), -1, &m_statement, NULL );
@@ -66,6 +73,7 @@ class Operation
             }
             return m_whereClause.bind( m_statement );
         }
+
         operator sqlite3_stmt*()
         {
             assert( m_statement != NULL );
@@ -83,6 +91,39 @@ class Operation
         std::string m_request;
         sqlite3_stmt* m_statement;
         WhereClause m_whereClause;
+};
+
+template <typename CLASS>
+class InsertOperation : public Operation<bool>
+{
+    public:
+        InsertOperation( CLASS& record )
+            : m_record( record )
+        {
+            m_request = "INSERT INTO " + CLASS::schema->name() + " VALUES(";
+            const auto& columns = CLASS::schema->columns();
+            for ( auto attr : columns )
+            {
+                m_request += attr->insert( record ) + ',';
+            }
+            m_request.replace(m_request.end() - 1, m_request.end(), ");");
+        }
+
+        virtual bool execute( sqlite3* db )
+        {
+            if ( Operation<bool>::execute( db ) == false )
+                return false;
+            auto& pKey = CLASS::schema->primaryKey();
+            int pKeyValue = sqlite3_last_insert_rowid( db );
+            pKey.set( m_record, pKeyValue );
+            return true;
+        }
+
+        InsertOperation( const InsertOperation& ) = delete;
+        InsertOperation( InsertOperation&& ) = default;
+
+    private:
+        CLASS& m_record;
 };
 
 }

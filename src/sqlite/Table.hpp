@@ -59,7 +59,7 @@ class TableSchema : ITableSchema
 
         const std::string& name() const { return m_name; }
         const Columns& columns() const { return m_columns; }
-        const PrimaryKeySchema<T>& primaryKey() const { return *m_primaryKey; }
+        PrimaryKeySchema<T>& primaryKey() const { return *m_primaryKey; }
 
         const ColumnSchemaPtr column( const std::string& name ) const
         {
@@ -109,17 +109,9 @@ class Table
             }
         }
 
-        Operation<bool> insert()
+        InsertOperation<CLASS> insert()
         {
-            std::string insertInto = "INSERT INTO " + CLASS::schema->name() + " VALUES(";
-            const auto& record = static_cast<CLASS&>( *this );
-            const auto& columns = CLASS::schema->columns();
-            for ( auto attr : columns )
-            {
-                insertInto += attr->insert( record ) + ',';
-            }
-            insertInto.replace(insertInto.end() - 1, insertInto.end(), ");");
-            return Operation<bool>( insertInto );
+            return InsertOperation<CLASS>( static_cast<CLASS&>( *this ) );
         }
 
         static Operation<CLASS> fetch()
@@ -127,7 +119,7 @@ class Table
             return Operation<CLASS>( "SELECT * FROM " + CLASS::schema->name() );
         }
 
-        static const PrimaryKeySchema<CLASS> primaryKey()
+        static const PrimaryKeySchema<CLASS>& primaryKey()
         {
             return CLASS::schema->primaryKey();
         }

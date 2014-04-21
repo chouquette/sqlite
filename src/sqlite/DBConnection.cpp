@@ -32,7 +32,6 @@ std::vector<ITableSchema*> DBConnection::s_tables;
 void
 DBConnection::registerTableSchema( ITableSchema* schema )
 {
-
     s_tables.push_back( schema );
 }
 

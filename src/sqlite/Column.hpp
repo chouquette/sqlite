@@ -177,6 +177,12 @@ class ColumnSchemaImpl : public ColumnSchema<CLASS>
             return (instance.*m_fieldPtr);
         }
 
+        void set( CLASS& instance, const TYPE& value )
+        {
+            (instance.*m_fieldPtr) = value;
+        }
+
+
     private:
         Column<CLASS, TYPE> CLASS::* m_fieldPtr;
 };

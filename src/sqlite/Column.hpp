@@ -172,10 +172,14 @@ class ColumnSchemaImpl : public ColumnSchema<CLASS>
             (inst->*m_fieldPtr).m_columnSchema = this;
         }
 
+        const TYPE& load( const CLASS& instance ) const
+        {
+            return (instance.*m_fieldPtr);
+        }
+
     private:
         Column<CLASS, TYPE> CLASS::* m_fieldPtr;
 };
-
 
 template <typename CLASS, typename TYPE>
 class PrimaryKeySchema : public ColumnSchemaImpl<CLASS, TYPE>

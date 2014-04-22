@@ -192,7 +192,7 @@ class PrimaryKeySchema : public ColumnSchemaImpl<CLASS, int>
 
         virtual std::string typeName() const
         {
-            return ColumnSchemaImpl<CLASS, int>::typeName() + " PRIMARY KEY";
+            return ColumnSchemaImpl<CLASS, int>::typeName() + " PRIMARY KEY AUTOINCREMENT";
         }
 };
 

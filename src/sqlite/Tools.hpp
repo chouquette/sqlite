@@ -44,7 +44,7 @@ struct Traits
 template <>
 struct Traits<int>
 {
-    static constexpr const char* name = "INT";
+    static constexpr const char* name = "INTEGER";
     static constexpr const bool need_escape = false;
     static constexpr int (* const Load)(sqlite3_stmt*, int) = &sqlite3_column_int;
     static constexpr int (* const Bind)(sqlite3_stmt*, int, int ) = &sqlite3_bind_int;

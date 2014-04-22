@@ -87,11 +87,13 @@ TEST_F( Sqlite, InsertOne )
     TestTable t;
     t.someText = "sea";
     t.moreText = "otter";
-    ASSERT_TRUE( conn->execute( t.insert() ) );
+    bool success = conn->execute( t.insert() );
+    ASSERT_TRUE( success );
     const char* listEntries = "SELECT * FROM TestTable";
     sqlite3_stmt* outHandle;
     sqlite3_prepare_v2(conn->rawConnection(), listEntries, -1, &outHandle, NULL);
-    ASSERT_EQ( sqlite3_step( outHandle ), SQLITE_ROW );
+    int res = sqlite3_step( outHandle );
+    ASSERT_EQ( SQLITE_ROW, res );
     int primaryKey = sqlite3_column_int( outHandle, 0 );
     ASSERT_EQ( t.id, primaryKey );
     const unsigned char* someText = sqlite3_column_text( outHandle, 1 );
@@ -109,7 +111,8 @@ TEST_F( Sqlite, LoadAll )
         TestTable& t = ts[i];
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
-        ASSERT_TRUE( conn->execute( t.insert() ) );
+        bool res = conn->execute( t.insert() );
+        ASSERT_TRUE( res );
     }
     std::vector<TestTable> t2s = conn->execute( TestTable::fetch() );
 
@@ -160,7 +163,7 @@ TEST_F( Sqlite, LoadByColumnValue )
         conn->execute( t.insert() );
     }
     auto attribute = TestTable::schema->column( "otherField" );
-    ASSERT_TRUE( (bool)attribute );
+    ASSERT_TRUE( (bool)attribute ); // check for non-null shared ptr
     auto res = conn->execute( TestTable::fetch().where( *attribute == "test5" ) );
     ASSERT_EQ( 1u, res.size() );
     TestTable t = res[0];

@@ -113,6 +113,14 @@ class ColumnSchema
             return Predicate( m_name, bindFunction );
         }
 
+        // Overload provided for direct column in where clauses
+        template <typename CLASS, typename TYPE>
+        Predicate operator==( const Column<CLASS, TYPE>& column ) const
+        {
+            // Force the cast operator to use the actual value
+            return operator==((TYPE)column);
+        }
+
         Predicate operator==( const std::string& value ) const
         {
             char* copy = strdup( value.c_str() );

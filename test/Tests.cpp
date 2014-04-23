@@ -153,6 +153,19 @@ TEST_F( Sqlite, LoadByPrimaryKey )
     }
 }
 
+TEST_F( Sqlite, NullValue )
+{
+    TestTable t;
+    t.someText = "moulaf";
+    bool res = t.insert();
+    ASSERT_TRUE( res );
+    ASSERT_FALSE( t.someText.isNull() );
+    ASSERT_TRUE( t.moreText.isNull() );
+
+    TestTable t2 = TestTable::fetch().where( TestTable::primaryKey() == t.id );
+    ASSERT_TRUE( t2.moreText.isNull() );
+    ASSERT_EQ( t.someText, t2.someText );
+}
 
 TEST_F( Sqlite, LoadByColumnValue )
 {

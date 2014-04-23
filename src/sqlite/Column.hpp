@@ -195,7 +195,6 @@ class ColumnSchemaImpl : public ColumnSchema<CLASS>
             (instance.*m_fieldPtr) = value;
         }
 
-
     private:
         Column<CLASS, TYPE> CLASS::* m_fieldPtr;
 };

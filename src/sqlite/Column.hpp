@@ -35,6 +35,12 @@ namespace vsqlite
 template <typename T, typename U>
 class ColumnSchemaImpl;
 
+template <typename>
+class PrimaryKeySchema;
+
+template <typename, typename, typename>
+class ForeignKeySchema;
+
 /*
  * CLASS: The class containing the column
  * TYPE: The column type
@@ -62,6 +68,13 @@ class Column
             return m_value;
         }
 
+        TYPE& operator=( const Column<CLASS, TYPE>& value )
+        {
+            m_value = value.m_value;
+            m_isNull = value.m_isNull;
+            return m_value;
+        }
+
         bool operator==( const TYPE& rvalue ) const
         {
             return m_value == rvalue;
@@ -85,6 +98,48 @@ class Column
         ColumnSchemaImpl<CLASS, TYPE>* m_columnSchema;
 
         friend class ColumnSchemaImpl<CLASS, TYPE>;
+};
+
+template <typename CLASS, typename FOREIGNVALUETYPE, typename FOREIGNKEYTYPE>
+class ForeignKey
+{
+    public:
+        Column<CLASS, FOREIGNKEYTYPE>& foreignKey()
+        {
+            return m_foreignKey;
+        }
+        const Column<CLASS, FOREIGNKEYTYPE>& foreignKey() const
+        {
+            return m_foreignKey;
+        }
+        FOREIGNVALUETYPE& operator=( const FOREIGNVALUETYPE& value )
+        {
+            const auto& fKeyImpl = static_cast<const PrimaryKeySchema<FOREIGNVALUETYPE>&>( FOREIGNVALUETYPE::schema->primaryKey() );
+            m_foreignKey = fKeyImpl.load( value );
+            m_value = value;
+            return m_value;
+        }
+
+        FOREIGNVALUETYPE* operator->()
+        {
+            fetchForeignValue();
+            return &m_value;
+        }
+
+    private:
+        void fetchForeignValue()
+        {
+            if ( m_isNull == false )
+                return ;
+            m_value = FOREIGNVALUETYPE::fetch().where( FOREIGNVALUETYPE::primaryKey() == m_foreignKey );
+        }
+
+    private:
+        FOREIGNVALUETYPE m_value;
+        bool m_isNull = true;
+        Column<CLASS, FOREIGNKEYTYPE> m_foreignKey;
+        ForeignKeySchema<CLASS, FOREIGNVALUETYPE, FOREIGNKEYTYPE>* m_columnSchema;
+        friend class ForeignKeySchema<CLASS, FOREIGNVALUETYPE, FOREIGNKEYTYPE>;
 };
 
 template <typename T>
@@ -212,6 +267,57 @@ class PrimaryKeySchema : public ColumnSchemaImpl<CLASS, int>
         {
             return ColumnSchemaImpl<CLASS, int>::typeName() + " PRIMARY KEY AUTOINCREMENT";
         }
+};
+
+// Type is the type of the linked entity.
+template <typename CLASS, typename FOREIGNTYPE, typename FOREIGNKEYTYPE>
+class ForeignKeySchema : public ColumnSchema<CLASS>
+{
+    public:
+        ForeignKeySchema(ForeignKey<CLASS, FOREIGNTYPE, FOREIGNKEYTYPE> CLASS::* fieldPtr, const std::string& name)
+            : ColumnSchema<CLASS>( name )
+            , m_fieldPtr( fieldPtr )
+            , m_foreignTypePrimaryKey( FOREIGNTYPE::schema->primaryKey() )
+        {
+        }
+
+        virtual std::string typeName() const
+        {
+            std::string create = Traits<FOREIGNKEYTYPE>::name;
+            create += ", FOREIGN KEY (" + ColumnSchema<CLASS>::m_name + ") REFERENCES "
+                    + FOREIGNTYPE::schema->name() + " (" + m_foreignTypePrimaryKey.name() + ")";
+            return create;
+        }
+
+        virtual std::string insert(const CLASS& record) const
+        {
+            const auto& column = (record.*m_fieldPtr).foreignKey();
+            if ( column.isNull() )
+                return "NULL";
+            std::ostringstream oss;
+            oss << (FOREIGNKEYTYPE)(column);
+            if (Traits<FOREIGNKEYTYPE>::need_escape)
+                return "\"" + oss.str() + "\"";
+            return oss.str();
+        }
+
+        virtual void load( sqlite3_stmt *stmt, CLASS &record ) const
+        {
+            // When using string, we need to cast the result from Traits::Load from unsigned char to char.
+            // This will be a no-op for other types
+            using LoadedType = typename std::conditional<std::is_same<FOREIGNKEYTYPE, std::string>::value, char*, FOREIGNKEYTYPE>::type;
+            LoadedType value = (LoadedType)Traits<FOREIGNKEYTYPE>::Load( stmt, ColumnSchema<CLASS>::m_columnIndex );
+            (record.*m_fieldPtr).foreignKey() = value;
+        }
+
+        virtual void setSchema( CLASS *inst )
+        {
+            (inst->*m_fieldPtr).m_columnSchema = this;
+        }
+
+    private:
+        ForeignKey<CLASS, FOREIGNTYPE, FOREIGNKEYTYPE> CLASS::* m_fieldPtr;
+        const ColumnSchema<FOREIGNTYPE>& m_foreignTypePrimaryKey;
 };
 
 }

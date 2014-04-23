@@ -75,7 +75,6 @@ class TableSchema : ITableSchema
         {
             static_assert(std::is_base_of<ColumnSchema<T>, C>::value,
                            "All table fields must inherit Column<> class");
-            //FIXME: static_assert that column is an Attribute instance
             column->setColumnIndex( m_columns.size() );
             m_columns.push_back(column);
         }
@@ -141,6 +140,8 @@ class Table
         // also using the containing class as a template parameter.
         template <typename T>
         using ColumnAttribute = Column<CLASS, T>;
+        template <typename FOREIGNTYPE, typename FOREIGNKEYTYPE>
+        using ForeignKeyAttribute = ForeignKey<CLASS, FOREIGNTYPE, FOREIGNKEYTYPE>;
 
         template <typename... COLUMNS>
         static const TableSchema<CLASS>* Register(const std::string& name, COLUMNS... columns)
@@ -160,6 +161,12 @@ class Table
         static std::shared_ptr<PrimaryKeySchema<CLASS>> createPrimaryKey(Column<CLASS, int> CLASS::* attributePtr, const std::string& name)
         {
             return std::make_shared<PrimaryKeySchema<CLASS>>(attributePtr, name);
+        }
+
+        template <typename FOREIGNTYPE, typename FOREIGNKEYTYPE>
+        static std::shared_ptr<ForeignKeySchema<CLASS, FOREIGNTYPE, FOREIGNKEYTYPE>> createForeignKey(ForeignKey<CLASS, FOREIGNTYPE, FOREIGNKEYTYPE> CLASS::* attributePtr, const std::string& name)
+        {
+            return std::make_shared<ForeignKeySchema<CLASS, FOREIGNTYPE, FOREIGNKEYTYPE>>(attributePtr, name);
         }
 };
 

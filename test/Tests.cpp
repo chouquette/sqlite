@@ -216,6 +216,9 @@ TEST_F( Sqlite, ForeignKey )
     std::vector<TestTable> t2s = TestTable::fetch();
     auto& t2 = t2s[0];
     ASSERT_EQ( ft.value, t2.foreignValue->value );
+    // check that the value is properly cached:
+    vsqlite::DBConnection::close();
+    ASSERT_EQ( ft.value, t2.foreignValue->value );
 }
 
 int main( int argc, char **argv )

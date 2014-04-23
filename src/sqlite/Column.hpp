@@ -132,6 +132,7 @@ class ForeignKey
             if ( m_isNull == false )
                 return ;
             m_value = FOREIGNVALUETYPE::fetch().where( FOREIGNVALUETYPE::primaryKey() == m_foreignKey );
+            m_isNull = false;
         }
 
     private:

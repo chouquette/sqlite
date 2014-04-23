@@ -173,7 +173,11 @@ class ColumnSchemaImpl : public ColumnSchema<CLASS>
             // This will be a no-op for other types
             using LoadedType = typename std::conditional<std::is_same<TYPE, std::string>::value, char*, TYPE>::type;
             LoadedType value = (LoadedType)Traits<TYPE>::Load( stmt, ColumnSchema<CLASS>::m_columnIndex );
-            record.*m_fieldPtr = value;
+            if ( std::is_pointer<LoadedType>::value == false ||
+                 value )
+            {
+                record.*m_fieldPtr = value;
+            }
         }
 
         virtual void setSchema( CLASS *inst )

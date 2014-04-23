@@ -70,6 +70,7 @@ class Sqlite : public testing::Test
     }
     virtual void TearDown()
     {
+        vsqlite::DBConnection::close();
         unlink("test.db");
     }
 };

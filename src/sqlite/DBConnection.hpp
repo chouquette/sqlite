@@ -41,6 +41,8 @@ class DBConnection
             return instance()._init( dbPath );
         }
 
+        static void close();
+
         static DBConnection& instance()
         {
             static DBConnection s_instance;
@@ -60,13 +62,10 @@ class DBConnection
         {
         }
 
-        ~DBConnection()
-        {
-            sqlite3_close( m_db );
-        }
+        ~DBConnection();
 
         bool _init( const std::string& dbPath );
-
+        void _close();
         void createTables();
 
     private:

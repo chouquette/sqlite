@@ -56,3 +56,20 @@ DBConnection::_init(const std::string& dbPath)
     }
     return m_isValid;
 }
+
+DBConnection::~DBConnection()
+{
+    _close();
+}
+
+void
+DBConnection::_close()
+{
+    sqlite3_close( instance().m_db );
+    instance().m_db = NULL;
+}
+
+void DBConnection::close()
+{
+    instance()._close();
+}

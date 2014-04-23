@@ -27,6 +27,7 @@
 #include <sstream>
 
 #include "Tools.hpp"
+#include "WhereClause.hpp"
 
 namespace vsqlite
 {

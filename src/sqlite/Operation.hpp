@@ -25,13 +25,13 @@
 
 #include <cassert>
 #include <sqlite3.h>
+#include "DBConnection.hpp"
 
 #include "WhereClause.hpp"
 
 namespace vsqlite
 {
 
-template <typename T>
 class Operation
 {
     public:
@@ -61,17 +61,18 @@ class Operation
         Operation( const Operation& op ) = delete;
         Operation( Operation&& op ) = default;
 
+    protected:
         virtual bool execute( sqlite3* db )
         {
-            m_request += m_whereClause.generate();
             int resultCode = sqlite3_prepare_v2( db, m_request.c_str(), -1, &m_statement, NULL );
             if ( resultCode != SQLITE_OK )
             {
                 std::cerr << "Failed to execute request " << m_request << '\n'
-                             << "Error code: " << resultCode << std::endl;
+                             << "Error code: " << resultCode << '(' <<
+                             DBConnection::instance().errorMsg() << ')' << std::endl;
                 return false;
             }
-            return m_whereClause.bind( m_statement );
+            return true;
         }
 
         operator sqlite3_stmt*()
@@ -80,21 +81,79 @@ class Operation
             return m_statement;
         }
 
-        Operation&& where( WhereClause&& clause )
+    protected:
+        std::string m_request;
+        sqlite3_stmt* m_statement;
+};
+
+template <typename T>
+class FetchOperation : public Operation
+{
+    public:
+        FetchOperation( const std::string& request )
+            : Operation( request )
+        {
+        }
+
+        operator T()
+        {
+            bool res = execute( DBConnection::instance().rawConnection() );
+            if ( res == false )
+                return T();
+            auto results = parseResults();
+            if ( results.size() == 0 )
+                return T();
+            return results[0];
+        }
+
+        operator std::vector<T>()
+        {
+            bool res = execute( DBConnection::instance().rawConnection() );
+            if ( res == false )
+                return std::vector<T>();
+            auto results = parseResults();
+            return results;
+        }
+
+        FetchOperation&& where( WhereClause&& clause )
         {
             m_whereClause = std::move( clause );
             return std::move( *this );
         }
 
-    private:
-    public:
-        std::string m_request;
-        sqlite3_stmt* m_statement;
+        virtual bool execute( sqlite3 *db )
+        {
+            m_request += m_whereClause.generate();
+            if ( Operation::execute( db ) == false )
+                return false;
+            return m_whereClause.bind( m_statement );
+        }
+
+    protected:
+        std::vector<T> parseResults()
+        {
+            std::vector<T> results;
+            while ( sqlite3_step( m_statement ) != SQLITE_DONE )
+            {
+                T row;
+                const auto& attributes = T::schema->columns();
+                for ( auto a : attributes )
+                {
+                    a->load( m_statement, row );
+                }
+
+                results.push_back( std::move( row ) );
+            }
+            return results;
+        }
+
+    protected:
         WhereClause m_whereClause;
+
 };
 
 template <typename CLASS>
-class InsertOperation : public Operation<bool>
+class InsertOperation : public Operation
 {
     public:
         InsertOperation( CLASS& record )
@@ -111,12 +170,23 @@ class InsertOperation : public Operation<bool>
 
         virtual bool execute( sqlite3* db )
         {
-            if ( Operation<bool>::execute( db ) == false )
+            if ( Operation::execute( db ) == false )
                 return false;
+            // We still need to step on the request for it to be executed.
+            int res = sqlite3_step( m_statement );
+            while ( res != SQLITE_DONE && res != SQLITE_ERROR )
+            {
+                res = sqlite3_step( m_statement );
+            }
             auto& pKey = CLASS::schema->primaryKey();
             int pKeyValue = sqlite3_last_insert_rowid( db );
             pKey.set( m_record, pKeyValue );
-            return true;
+            return res != SQLITE_ERROR;
+        }
+
+        operator bool()
+        {
+            return execute( DBConnection::instance().rawConnection() );
         }
 
         InsertOperation( const InsertOperation& ) = delete;
@@ -124,6 +194,35 @@ class InsertOperation : public Operation<bool>
 
     private:
         CLASS& m_record;
+};
+
+class CreateTableOperation : public Operation
+{
+    public:
+        template <typename TABLESCHEMA>
+        CreateTableOperation( const TABLESCHEMA& schema )
+        {
+            m_request = "CREATE TABLE IF NOT EXISTS " + schema.name() + '(';
+            const auto& columns = schema.columns();
+            for (auto c : columns)
+              m_request += c->name() + ' ' + c->typeName() + ',';
+            m_request.replace(m_request.end() - 1, m_request.end(), ")");
+        }
+
+        virtual bool execute( sqlite3* db )
+        {
+            if ( Operation::execute( db ) == false )
+                return false;
+            // We still need to step on the request for it to be executed.
+            int res = sqlite3_step( m_statement );
+            while ( res != SQLITE_DONE && res != SQLITE_ERROR )
+            {
+                res = sqlite3_step( m_statement );
+            }
+            return res != SQLITE_ERROR;
+        }
+
+
 };
 
 }

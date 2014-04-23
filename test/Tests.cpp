@@ -48,8 +48,9 @@ class Sqlite : public testing::Test
 {
     virtual void SetUp()
     {
-        conn = vsqlite::DBConnection::init("test.db");
-        ASSERT_TRUE( conn->isValid() );
+        bool res = vsqlite::DBConnection::init("test.db");
+        ASSERT_TRUE( res );
+        conn = &vsqlite::DBConnection::instance();
     }
     virtual void TearDown()
     {
@@ -87,7 +88,7 @@ TEST_F( Sqlite, InsertOne )
     TestTable t;
     t.someText = "sea";
     t.moreText = "otter";
-    bool success = conn->execute( t.insert() );
+    bool success = t.insert().execute( conn->rawConnection() );
     ASSERT_TRUE( success );
     const char* listEntries = "SELECT * FROM TestTable";
     sqlite3_stmt* outHandle;
@@ -111,10 +112,10 @@ TEST_F( Sqlite, LoadAll )
         TestTable& t = ts[i];
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
-        bool res = conn->execute( t.insert() );
+        bool res = t.insert();
         ASSERT_TRUE( res );
     }
-    std::vector<TestTable> t2s = conn->execute( TestTable::fetch() );
+    std::vector<TestTable> t2s = TestTable::fetch();
 
     ASSERT_EQ( 10u, t2s.size() );
     for (int i = 0; i < 10; ++i)
@@ -135,12 +136,13 @@ TEST_F( Sqlite, LoadByPrimaryKey )
         TestTable& t = ts[i];
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
-        conn->execute( t.insert() );
+        bool res = t.insert();
+        ASSERT_TRUE( res );
     }
     for ( int i = 0; i < 10; ++i )
     {
-        std::vector<TestTable> t2s = conn->execute( TestTable::fetch().where
-                                                    ( TestTable::primaryKey() == i ) );
+        std::vector<TestTable> t2s = TestTable::fetch().where
+                                                    ( TestTable::primaryKey() == i + 1 );
 
         ASSERT_EQ(1u, t2s.size());
         TestTable& t2 = t2s[0];
@@ -160,14 +162,15 @@ TEST_F( Sqlite, LoadByColumnValue )
         TestTable& t = ts[i];
         t.someText = std::string("load") + (char)(i + '0');
         t.moreText = std::string("test") + (char)(i + '0');
-        conn->execute( t.insert() );
+        bool res = t.insert();
+        ASSERT_TRUE( res );
     }
     auto attribute = TestTable::schema->column( "otherField" );
     ASSERT_TRUE( (bool)attribute ); // check for non-null shared ptr
-    auto res = conn->execute( TestTable::fetch().where( *attribute == "test5" ) );
+    std::vector<TestTable> res = TestTable::fetch().where( *attribute == "test5" );
     ASSERT_EQ( 1u, res.size() );
     TestTable t = res[0];
-    ASSERT_EQ( 5, t.id );
+    ASSERT_EQ( 6, t.id ); // We index our values from 0 but autoincrement starts from 1
     ASSERT_EQ( t.someText, "load5" );
 }
 

@@ -27,6 +27,7 @@
 
 #include "Column.hpp"
 #include "DBConnection.hpp"
+#include "Operation.hpp"
 
 namespace vsqlite
 {
@@ -36,7 +37,8 @@ template <typename T> class Table;
 class ITableSchema
 {
     public:
-        virtual Operation<bool> create() const = 0;
+        virtual CreateTableOperation create() const = 0;
+        virtual const std::string& name() const = 0;
 };
 
 template <typename T>
@@ -48,13 +50,9 @@ class TableSchema : ITableSchema
 
         TableSchema(const std::string& name) : m_name(name) {}
 
-        virtual Operation<bool> create() const
+        virtual CreateTableOperation create() const
         {
-            std::string query = "CREATE TABLE IF NOT EXISTS " + m_name + '(';
-            for (auto c : m_columns)
-              query += c->name() + ' ' + c->typeName() + ',';
-            query.replace(query.end() - 1, query.end(), ")");
-            return Operation<bool>(query);
+            return CreateTableOperation( *this );
         }
 
         const std::string& name() const { return m_name; }
@@ -114,9 +112,9 @@ class Table
             return InsertOperation<CLASS>( static_cast<CLASS&>( *this ) );
         }
 
-        static Operation<CLASS> fetch()
+        static FetchOperation<CLASS> fetch()
         {
-            return Operation<CLASS>( "SELECT * FROM " + CLASS::schema->name() );
+            return FetchOperation<CLASS>( "SELECT * FROM " + CLASS::schema->name() );
         }
 
         static const PrimaryKeySchema<CLASS>& primaryKey()

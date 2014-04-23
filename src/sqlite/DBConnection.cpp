@@ -26,20 +26,33 @@
 
 using namespace vsqlite;
 
-DBConnection DBConnection::s_instance;
-std::vector<ITableSchema*> DBConnection::s_tables;
-
 void
 DBConnection::registerTableSchema( ITableSchema* schema )
 {
-    s_tables.push_back( schema );
+    instance().m_tables.push_back( schema );
 }
 
 void
 DBConnection::createTables()
 {
-    for ( auto t : s_tables )
+    for ( auto t : m_tables )
     {
-        execute( t->create() );
+        if ( t->create().execute( DBConnection::instance().rawConnection() ) == false )
+        {
+            std::cerr << "Failed to create table \"" << t->name() << '"' << std::endl;
+            return;
+        }
     }
+}
+
+bool
+DBConnection::_init(const std::string& dbPath)
+{
+    int res = sqlite3_open( dbPath.c_str(), &m_db );
+    m_isValid = ( res == SQLITE_OK );
+    if ( m_isValid )
+    {
+        createTables();
+    }
+    return m_isValid;
 }

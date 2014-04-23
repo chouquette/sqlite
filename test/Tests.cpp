@@ -26,6 +26,19 @@
 #include "sqlite/sqlite.hpp"
 #include "sqlite/Table.hpp"
 
+class ForeignTable : public vsqlite::Table<ForeignTable>
+{
+    public:
+        static const vsqlite::TableSchema<ForeignTable>* schema;
+
+        ColumnAttribute<int> id;
+        ColumnAttribute<std::string> value;
+};
+
+const auto* ForeignTable::schema = ForeignTable::Register("ForeignTable",
+                                                          createPrimaryKey(&ForeignTable::id, "id"),
+                                                          createField(&ForeignTable::value, "value"));
+
 class TestTable : public vsqlite::Table<TestTable>
 {
     public:
@@ -35,12 +48,15 @@ class TestTable : public vsqlite::Table<TestTable>
         ColumnAttribute<int> id;
         ColumnAttribute<std::string> someText;
         ColumnAttribute<std::string> moreText;
+        ForeignKeyAttribute<ForeignTable, int> foreignValue;
 };
 
 const auto* TestTable::schema = TestTable::Register("TestTable",
                                           createPrimaryKey(&TestTable::id, "id"),
                                           createField(&TestTable::someText, "text"),
-                                          createField(&TestTable::moreText, "otherField") );
+                                          createField(&TestTable::moreText, "otherField"),
+                                          createForeignKey(&TestTable::foreignValue, "foreignKey" ) );
+
 
 static vsqlite::DBConnection* conn;
 
@@ -185,6 +201,20 @@ TEST_F( Sqlite, LoadByColumnValue )
     TestTable t = res[0];
     ASSERT_EQ( 6, t.id ); // We index our values from 0 but autoincrement starts from 1
     ASSERT_EQ( t.someText, "load5" );
+}
+
+TEST_F( Sqlite, ForeignKey )
+{
+    ForeignTable ft;
+    ft.value = "Foreign Value";
+    bool res = ft.insert();
+    TestTable t;
+    t.foreignValue = ft;
+    res = t.insert();
+
+    std::vector<TestTable> t2s = TestTable::fetch();
+    auto& t2 = t2s[0];
+    ASSERT_EQ( ft.value, t2.foreignValue->value );
 }
 
 int main( int argc, char **argv )
